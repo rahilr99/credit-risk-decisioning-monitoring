@@ -71,6 +71,13 @@ Because this project uses public historical data rather than a live production s
 
 The monitoring layer may track score distributions, approval rates, risk-band mix, average predicted risk, observed bad outcomes rates, and model performance across cohorts. These views help show that the project is not only about training a model, but also about understanding how the model and portfolio behave after decisions are made. 
 
+### Layer 7: Streamlit Interface
+The Streamlit interface is the user-facing layer of the project. It should display model outputs, decision policy results, monitoring views, and model performance summaries in a clear way. The dashboard may eventually include separate pages for applicant scoring, portfolio monitoring, data quality checks, and model evaluation.
+
+Streamlit should not contain core business logic. It should call reusable functions from the project code and displays the results. For example, Streamlit can collect applicant inputs, but validation should happen through a validation function. Streamlit can display monitoring charts, but the monitoring calculations should come from reusable functions or SQL queries. 
+
+This makes the project cleaner and more professional. If the interface changes later, the underlying risk engine should still work. The dashboard is the presentation layer, not the system itself. 
+
 
 
 
