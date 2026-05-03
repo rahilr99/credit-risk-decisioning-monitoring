@@ -74,11 +74,30 @@ The monitoring layer may track score distributions, approval rates, risk-band mi
 ### Layer 7: Streamlit Interface
 The Streamlit interface is the user-facing layer of the project. It should display model outputs, decision policy results, monitoring views, and model performance summaries in a clear way. The dashboard may eventually include separate pages for applicant scoring, portfolio monitoring, data quality checks, and model evaluation.
 
-Streamlit should not contain core business logic. It should call reusable functions from the project code and displays the results. For example, Streamlit can collect applicant inputs, but validation should happen through a validation function. Streamlit can display monitoring charts, but the monitoring calculations should come from reusable functions or SQL queries. 
+Streamlit should not contain core business logic. It should call reusable functions from the project code and display the results. For example, Streamlit can collect applicant inputs, but validation should happen through a validation function. Streamlit can display monitoring charts, but the monitoring calculations should come from reusable functions or SQL queries. 
 
 This makes the project cleaner and more professional. If the interface changes later, the underlying risk engine should still work. The dashboard is the presentation layer, not the system itself. 
 
 
+### Separation of Concerns
+The architecture follows the principle of separation of concerns. Each part of the project should have a clear responsibility. Data validation should validate data. Preprocessing should prepare features. If all the logic lives inside one notebook or one Streamlit file, then the project becomes fragile. A small change to the dashboard could accidentally affect preprocessing, scoring, decision rules, or monitoring calculations. 
+
+A cleaner structure makes the project easier to test, debug, and present in an interview. It also shows that the project was designed like a small product, not just a one-time machine learning experiment. 
+
+
+### Offline Monitoring Framing
+The monitoring component must be described honestly. Since this project uses a static public dataset, it does not have a live stream of new applicants. Therefore, the project should not claim to perform live production monitoring. 
+
+Instead, the monitoring dashboard will be framed as an offline monitoring prototype. It will use historical cohorts, issue dates, application periods, or simulated batches, depending on the selected datasets. The goal is to demonstrate the monitoring logic that a lender would use in production, while being honest about the limits of the available data. 
+
+This framing is important because it avoids overstating the project. The dashboard can still be valuable because it shows how risk distributions, approval rates, risk-band mix, and bad outcomes rates could be tracked over time. But the project should clearly state that the monitoring is a prototype, not a live deployment. 
+
+### Future Architecture Vision
+The final version of the project should feel like a small fintech-style risk product. A user should be able to understand the business problem, inspect the data, view model performance, score hypothetical applicants, see the decision policy output, and monitor portfolio behavior across cohorts. 
+
+The long-term structure should support reusable code. Notebooks should be used for exploration and documentation, while the main project logic should live in reusable Python modules. The SQLite database should provide a simple structured data layer, and the Streamlit app should sit on top of the reusable logic and make the results easier to interact with.
+
+The final product should show that the project is not only about building a model. It is about building a responsible decisioning workflow around the model. That workflow includes validation, preprocessing, risk scoring, decision policy, structured storage, monitoring, and clear communication of limitations.
 
 
 
