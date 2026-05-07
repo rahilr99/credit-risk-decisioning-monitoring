@@ -105,7 +105,7 @@ The leakage review must make sure that `loan_status` and any post-origination pe
 
 The model evaluation stage should use metrics that are appropriate for credit risk classification. Since bad loans are usually less common than good loans, accuracy alone will not be enough. Later modules should consider metircs such as recall for bad loans, precision, ROC-AUC, PR-AUC, confusion matrices, and threshold-based policy impact. 
 
-The decisioning layer will use the model's predicted probability of `bad_loans = 1` as the risk score. This score will be converted into risk bands and simulated policy decisions such as approve, manual review, or reject. The exact thresholds will be defined later in the decision policy module. 
+The decisioning layer will use the model's predicted probability of `bad_loan = 1` as the risk score. This score will be converted into risk bands and simulated policy decisions such as approve, manual review, or reject. The exact thresholds will be defined later in the decision policy module. 
 
 The monitoring layer will use the target to compare predicted risk against observed outcomes across historical cohorts. This will allow the project to monitor bad-loan rates by cohort, bad-loan rates by risk band, score distributions, risk band mix, and simulated decision rates over time. 
 
