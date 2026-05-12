@@ -66,6 +66,39 @@ The most important distinction is between fields that can be used before a loan 
 ## 4. Modeling Feature Candidates
 Modeling feature candidates are fields that may be used as inputs for the applicant scoring model because they describe the borrower, loan request, or credit profile before or around origination. 
 
+Initial candidate categories include loan request information, borrower financial profile, borrower stability, credit history variables, and application structure. Examples include `loan_amnt`, `term`, `purpose`, `annual_inc`, `dti`, `emp_length`, `home_ownership`, and  `application_type`. 
+
+These fields are not automatically guaranteed to be used in the final model. During data ingestion and EDA, each candidate feature still needs to be checked for missing values, extreme outliers, inconsistent formatting, redundancy, and possible timing issues. The final model feature set will be selected only after these checks are complete. 
+
+
+## 5. Target and Outcome Fields
+Target and Outcome fields are used to define or evaluate the repayment outcome of a loan. The main outcome field is `loan_status`, which will be used to create the derived binary target `bad_loan`. 
+
+The target variable `bad_loan` will be used for model training, validation, evaluation, and monitoring. It should never be included as input feature. The model should learn to predict `bad_loan` from application/origination-time information, not from fields that directly reveal the outcome. 
+
+
+## 6. Monitoring-Only Fields
+Monitoring-only fields are useful after the model has already produced scores. These fields help track portfolio behavior, compare predicted risk against realized outcomes, and monitor historical cohorts. 
+
+Examples include `issue_d`, `loan_status`, `bad_loan`, payment fields, recovery fields, remaining balance fields, and derived project fields such as model score, risk band, and simulated policy decision. 
+
+A field can be valid for monitoring while still being invalid for model training. For example, `loan_status` is necessary for outcome monitoring, but it would be direct leakage if used as a model input. 
+
+
+## 7. Suspicious or Excluded Fields
+Suspicious fields are not necessarily future performance fields, but they may still be inappropriate for the first model version because they reflect LendingClub's own decisioning or pricing process. Examples include `int_rate`, `grade`, `sub_grade` and possibly `installment`. 
+
+For this MVP, `int_rate`, `grade`, and `sub_grade` will be excluded from the first model feature set. This helps the project model learn from borrower and loan characteristics directly instead of depending on LendingClub's prior risk assessment. 
+
+Clear leakage fields will also be excluded from model training. This includes payment history, recoveries, collection activity, remaining principal, hardship fields, settlement fields, and final outcome fields. 
+
+## 8. Notes for Later Updates
+This file is an intial skeleton and will be updated after the raw LendingClub dataset is loaded and inspected. The final data dictionary should include all selected columns used in the project, their cleaned names if applicable, their role in the system, and any transformation decisions. 
+
+During later modules, each important column should be assigned one of the following roles: modeling features, target/outcome field, monitroing-only fields, suspicious field, or excluded fields. 
+
+
+
 
 
 
