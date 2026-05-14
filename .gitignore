@@ -216,3 +216,25 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Project data files
+data/raw/*
+!data/raw/SOURCE.md
+!data/raw/.gitkeep
+
+data/interim/*
+!data/interim/.gitkeep
+
+data/processed/*
+!data/processed/.gitkeep
+
+# Generated report tables
+reports/tables/*.csv
+!reports/tables/.gitkeep
+
+# Model artifacts
+models/*
+!models/.gitkeep
+
+# macOS
+.DS_Store
