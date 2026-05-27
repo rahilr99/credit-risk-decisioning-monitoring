@@ -31,6 +31,16 @@ def load_raw_lendingclub_data(nrows: int | None = None) -> pd.DataFrame:
     
     return df
 
+def iter_raw_lendingclub_data_chunks(chunksize: int = 100_000):
+    """
+    Yield the raw LendingClub dataset in chunks
+
+    This allows other modules to process the full raw dataset without loading the entire file into memory at once. 
+    """
+    for chunk in pd.read_csv(RAW_DATA_PATH, compression="infer",low_memory=False, chunksize = chunksize):
+        yield chunk
+
+
 def basic_dataframe_report(df: pd.DataFrame) -> None:
     """
     Print a basic inspection report for a DataFrame.
@@ -100,7 +110,7 @@ def inspect_raw_lendingclub_file_in_chunks(chunksize: int = 100_000) -> None:
     print("Starting chunked raw file inspection...")
     print(f"Chunk size: {chunksize:,} rows")
 
-    for chunk in pd.read_csv(RAW_DATA_PATH, compression='infer', low_memory=False, chunksize=chunksize,):
+    for chunk in iter_raw_lendingclub_data_chunks(chunksize=chunksize):
         chunk_count +=1
         total_rows +=len(chunk)
 
