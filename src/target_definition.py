@@ -1,6 +1,12 @@
 import pandas as pd
+from pathlib import Path
+from data_ingestion import load_raw_lendingclub_data, iter_raw_lendingclub_data_chunks
 
-from data_ingestion import load_raw_lendingclub_data
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+REPORTS_TABLES_DIR = PROJECT_ROOT / "reports" / "tables"
+BAD_LOAN_TARGET_SUMMARY_PATH = REPORTS_TABLES_DIR / "bad_loan_target_summary.csv"
+
 
 GOOD_LOAN_STATUSES = {
     "Fully Paid", 
@@ -101,24 +107,98 @@ def print_target_summary(
     print("\nTarget Summary:")
     print(summary_df.to_string(index=False))
 
+def summarize_bad_loan_target_in_chunks(
+    chunksize: int = 100_000, 
+    output_path: Path = BAD_LOAN_TARGET_SUMMARY_PATH, 
+) -> pd.DataFrame:
+    """
+    Apply the bad_loan target definition to the full raw dataset in chunks and save a target summary report.
+
+    This avoids loading the full LendingClub dataset into memory.
+    """
+    total_rows = 0
+    chunk_count = 0
+    target_counts = {}
+
+    print("Starting chunked bad_loan target summary...")
+    print(f"Chunk size: {chunksize:,} rows")
+
+    for chunk in iter_raw_lendingclub_data_chunks(chunksize=chunksize):
+        chunk_count += 1
+        total_rows += len(chunk)
+
+        chunk_with_target = add_bad_loan_target(chunk)
+
+        chunk_target_counts = chunk_with_target["bad_loan"].value_counts(dropna=False)
+
+        for target_value, count in chunk_target_counts.items():
+            if pd.isna(target_value):
+                clean_target_value = "MISSING"
+            else: 
+                clean_target_value = int(target_value)
+            
+            target_counts[clean_target_value] = (
+                target_counts.get(clean_target_value, 0) + int(count)
+            )
+        print(f"Processed chunk {chunk_count:,} | Total rows so far: {total_rows:,}")
+
+    records = []
+
+    target_labels = {
+        0: "good_loan", 
+        1: "bad_loan", 
+        "MISSING": "excluded_or_unmapped", 
+    }
+
+    for target_value in [0, 1, "MISSING"]:
+        count = target_counts.get(target_value, 0)
+
+        records.append(
+            {
+                "bad_loan": target_value, 
+                "target_label": target_labels[target_value],
+                "count": count,
+                "percentage_of_total_rows": count / total_rows,
+            }
+        )
+
+    summary_df = pd.DataFrame(records)
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    summary_df.to_csv(output_path, index=False)
+
+    print("\nChunked bad_loan target summary complete.")
+    print(f"Total chunks processed: {chunk_count:,}")
+    print(f"Total rows processed: {total_rows:,}")
+
+    print("\nTarget summary:")
+    print(summary_df.to_string(index=False))
+
+    print(f"\nSaved bad_loan target summary report to: {output_path}")
+
+       
+
+
 
 if __name__ == "__main__":
-    print("Loading sample raw LendingClub data...")
+    # print("Loading sample raw LendingClub data...")
 
-    sample_df = load_raw_lendingclub_data(nrows=500_000)
+    # sample_df = load_raw_lendingclub_data(nrows=500_000)
 
-    print("Adding bad_loan target...")
-    sample_with_target = add_bad_loan_target(sample_df)
+    # print("Adding bad_loan target...")
+    # sample_with_target = add_bad_loan_target(sample_df)
 
-    print("\nSummary before filtering unresolved statuses:")
-    print_target_summary(sample_with_target)
+    # print("\nSummary before filtering unresolved statuses:")
+    # print_target_summary(sample_with_target)
 
-    print("\nFiltering to rows with defined target...")
-    supervised_sample = filter_target_defined_rows(sample_with_target)
+    # print("\nFiltering to rows with defined target...")
+    # supervised_sample = filter_target_defined_rows(sample_with_target)
 
-    print("\nSummary after filtering unresolved statuses:")
-    print_target_summary(supervised_sample)
+    # print("\nSummary after filtering unresolved statuses:")
+    # print_target_summary(supervised_sample)
 
-    print(f"\nOriginal sample rows: {len(sample_df):,}")
-    print(f"Rows with defined target: {len(supervised_sample):,}")
-    print(f"Rows excluded from supervised sample: {len(sample_df) - len(supervised_sample):,}")
+    # print(f"\nOriginal sample rows: {len(sample_df):,}")
+    # print(f"Rows with defined target: {len(supervised_sample):,}")
+    # print(f"Rows excluded from supervised sample: {len(sample_df) - len(supervised_sample):,}")
+
+    summarize_bad_loan_target_in_chunks(chunksize=100_000)

@@ -1,0 +1,4 @@
+bad_loan,target_label,count,percentage_of_total_rows
+0,good_loan,1078739,0.47717013439636646
+1,bad_loan,290827,0.12864461067606905
+MISSING,excluded_or_unmapped,891135,0.3941852549275645
