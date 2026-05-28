@@ -6,6 +6,8 @@ from data_ingestion import load_raw_lendingclub_data, iter_raw_lendingclub_data_
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 REPORTS_TABLES_DIR = PROJECT_ROOT / "reports" / "tables"
 BAD_LOAN_TARGET_SUMMARY_PATH = REPORTS_TABLES_DIR / "bad_loan_target_summary.csv"
+INTERIM_DATA_DIR = PROJECT_ROOT / "data" / "interim"
+TARGET_DEFINED_DATA_PATH = INTERIM_DATA_DIR / "lendingclub_target_defined.csv.gz"
 
 
 GOOD_LOAN_STATUSES = {
@@ -175,8 +177,11 @@ def summarize_bad_loan_target_in_chunks(
     print(summary_df.to_string(index=False))
 
     print(f"\nSaved bad_loan target summary report to: {output_path}")
+    return summary_df
 
-       
+
+
+
 
 
 
@@ -202,3 +207,5 @@ if __name__ == "__main__":
     # print(f"Rows excluded from supervised sample: {len(sample_df) - len(supervised_sample):,}")
 
     summarize_bad_loan_target_in_chunks(chunksize=100_000)
+
+  
