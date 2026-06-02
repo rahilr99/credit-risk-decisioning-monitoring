@@ -14,6 +14,10 @@ INTERIM_MISSINGNESS_REPORT_PATH = (
     REPORTS_TABLE_DIR / "interim_missingness_report.csv"
 )
 
+INTERIM_DUPLICATE_SUMMARY_PATH = (
+    REPORTS_TABLE_DIR / "interim_duplicate_summary.csv"
+)
+
 def validate_target_defined_dataset(
         input_path: Path = TARGET_DEFINED_DATA_PATH,
 ) -> pd.DataFrame:
@@ -127,8 +131,57 @@ def create_missingness_report(
     return report_df
 
 
+def create_duplicate_summary_report(
+        df: pd.DataFrame, 
+        output_path: Path = INTERIM_DUPLICATE_SUMMARY_PATH,
+) -> pd.DataFrame:
+    """
+    Create and save a summary of exact duplicate rows in the interim dataset. 
+
+    The report distinguishes between:
+    1. All rows involved in duplicate groups. 
+    2. Redundant duplicate rows after the first occurence is kept. 
+    """
+
+    total_rows = df.shape[0]
+
+    rows_in_duplicate_groups = df.duplicated(keep=False).sum()
+
+    redundant_duplicate_rows = df.duplicated(keep="first").sum()
+
+    unique_rows_after_deduplication = (
+        total_rows - redundant_duplicate_rows
+    )
+
+    report_df = pd.DataFrame(
+        [
+            {
+                "total_rows": total_rows, 
+                "rows_in_duplicate_groups": rows_in_duplicate_groups, 
+                "redundant_duplicate_rows": redundant_duplicate_rows, 
+                "unique_rows_after_deduplication": unique_rows_after_deduplication, 
+                "redundant_duplicate_percentage": (
+                    redundant_duplicate_rows / total_rows
+                ), 
+            }
+        ]
+    )
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    report_df.to_csv(output_path, index=False)
+
+    print("\nDuplicate-row summary created.")
+    print(f"Saved to: {output_path}")
+
+    print("\nExact duplicate-row summary:")
+    print(report_df.to_string(index=False))
+
+    return report_df
+
+
 if __name__ == "__main__":
     validated_df = validate_target_defined_dataset()
 
     create_missingness_report(validated_df)
-    
+
+    create_duplicate_summary_report(validated_df)
