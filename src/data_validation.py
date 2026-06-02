@@ -8,9 +8,15 @@ TARGET_DEFINED_DATA_PATH = (
     PROJECT_ROOT / "data" / "interim" / "lendingclub_target_defined.csv.gz"
 )
 
+REPORTS_TABLE_DIR = PROJECT_ROOT / "reports" / "tables"
+
+INTERIM_MISSINGNESS_REPORT_PATH = (
+    REPORTS_TABLE_DIR / "interim_missingness_report.csv"
+)
+
 def validate_target_defined_dataset(
         input_path: Path = TARGET_DEFINED_DATA_PATH,
-) -> None:
+) -> pd.DataFrame:
     """
     Validate the locally generated target-defined interim dataset
 
@@ -74,6 +80,55 @@ def validate_target_defined_dataset(
 
     print("\nValidation passed.")
     print("The interim dataset is ready for the next Module 2 step.")
+    return df
+
+def create_missingness_report(
+    df: pd.DataFrame, 
+    output_path: Path = INTERIM_MISSINGNESS_REPORT_PATH,
+) -> pd.DataFrame:
+    """
+    Create and save a missingness report for the interim dataset. 
+
+    The report contains:
+    1. Column name
+    2. Data type
+    3. Missing-value count
+    4. Missing-value percentage
+    5. Non-missing-value count
+    """
+
+    row_count = df.shape[0]
+
+    report_df = pd.DataFrame(
+        {
+            "column_name": df.columns, 
+            "dtype": df.dtypes.astype(str).to_numpy(),
+            "missing_count": df.isna().sum().to_numpy(),
+        } 
+    )
+
+    report_df["missing_percentage"] = (
+        report_df["missing_count"] / row_count
+    )
+
+    report_df = report_df.sort_values(
+        by=["missing_percentage", "column_name"], ascending=[False, True], 
+    ).reset_index(drop=True)
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    report_df.to_csv(output_path, index=False)
+
+    print("\nMissingness report created.")
+    print(f"Saved to: {output_path}")
+
+    print("\nTop 20 columns by missing percentage: ")
+    print(report_df.head(20).to_string(index=False))
+    return report_df
+
 
 if __name__ == "__main__":
-    validate_target_defined_dataset()
+    validated_df = validate_target_defined_dataset()
+
+    create_missingness_report(validated_df)
+    
