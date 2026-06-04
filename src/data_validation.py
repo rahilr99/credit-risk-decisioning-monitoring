@@ -18,6 +18,11 @@ INTERIM_DUPLICATE_SUMMARY_PATH = (
     REPORTS_TABLE_DIR / "interim_duplicate_summary.csv"
 )
 
+INTERIM_COLUMN_PROFILE_PATH = (
+    REPORTS_TABLE_DIR / "interim_column_profile.csv"
+)
+
+
 def validate_target_defined_dataset(
         input_path: Path = TARGET_DEFINED_DATA_PATH,
 ) -> pd.DataFrame:
@@ -178,6 +183,56 @@ def create_duplicate_summary_report(
 
     return report_df
 
+def create_column_profile_report(
+        df: pd.DataFrame, 
+        output_path: Path = INTERIM_COLUMN_PROFILE_PATH,
+) -> pd.DataFrame:
+    """
+    Create and save a basic profile report for each interim-dataset column. 
+
+    The report includes: 
+    1. Column name
+    2. Data type
+    3. Non-missing unique-value count
+    4. Missing-value count
+    5. Missing-value percentage
+    6. Whether the column is constant among its non-missing values
+    """
+
+    row_count = df.shape[0]
+
+    report_df = pd.DataFrame(
+        {
+            "column_name": df.columns,
+            "dtype": df.dtypes.astype(str).to_numpy(), 
+            "unique_non_missing_count": df.nunique(dropna=True).to_numpy(),
+            "missing_count": df.isna().sum().to_numpy(), 
+        }
+    )
+
+    report_df["missing_percentage"] = (
+        report_df["missing_count"] / row_count
+    )
+
+    report_df["is_constant_non_missing"] = (
+        report_df["unique_non_missing_count"] <=1
+    )
+
+    report_df = report_df.sort_values(
+        by=["unique_non_missing_count", "column_name"], ascending=[True, True],
+    ).reset_index(drop=True)
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    
+    report_df.to_csv(output_path, index=False)
+
+    print("\nColumn profile report created.")
+    print(f"Saved to: {output_path}")
+
+    print("\nColumns with the fewest unique non-missing values:")
+    print(report_df.head(20).to_string(index=False))
+
+    return report_df
 
 if __name__ == "__main__":
     validated_df = validate_target_defined_dataset()
@@ -185,3 +240,5 @@ if __name__ == "__main__":
     create_missingness_report(validated_df)
 
     create_duplicate_summary_report(validated_df)
+
+    create_column_profile_report(validated_df)
