@@ -26,6 +26,10 @@ INTERIM_IDENTIFIER_INTEGRITY_PATH = (
     REPORTS_TABLE_DIR / "interim_identifier_integrity.csv"
 )
 
+INTERIM_ISSUE_DATE_INTEGRITY_PATH = (
+    REPORTS_TABLE_DIR / "interim_issue_date_integrity.csv"
+)
+
 
 def validate_target_defined_dataset(
         input_path: Path = TARGET_DEFINED_DATA_PATH,
@@ -320,6 +324,86 @@ def create_identifier_integrity_report(
 
     return report_df
 
+def create_issue_date_integrity_report(
+        df: pd.DataFrame, 
+        date_column: str = "issue_d", 
+        date_format: str = "%b-%Y",
+        output_path: Path = INTERIM_ISSUE_DATE_INTEGRITY_PATH, 
+) -> pd.DataFrame:
+    """
+    Create and save an integrity report for the loan issuance month.
+    
+    This confirms that: 
+    1. The issue_date column exists. 
+    2. The issue_date values are not missing. 
+    3. Non-missing values can be parsed as dates.
+    4. The earliest and latest issuance months are available.
+    """
+
+    if date_column not in df.columns: 
+        raise ValueError(f"Missing required date column: {date_column}")
+    
+    total_rows = df.shape[0]
+
+    raw_issue_dates = df[date_column]
+
+    parsed_issue_dates = pd.to_datetime(
+        raw_issue_dates, 
+        format=date_format, 
+        errors="coerce", 
+    )
+
+    missing_raw_issue_date_count = raw_issue_dates.isna().sum()
+
+    invalid_issue_date_count = (
+        raw_issue_dates.notna() 
+        & parsed_issue_dates.isna()
+    ).sum()
+
+    unique_issue_month_count = parsed_issue_dates.nunique(dropna=True)
+
+    earliest_issue_month = parsed_issue_dates.min()
+    latest_issue_month = parsed_issue_dates.max()
+
+    report_df = pd.DataFrame(
+        [
+            {
+                "date_column": date_column, 
+                "total_rows": total_rows, 
+                "missing_raw_issue_date_count": missing_raw_issue_date_count, 
+                "invalid_issue_date_count": invalid_issue_date_count, 
+                "unique_issue_month_count": unique_issue_month_count, 
+                "earliest_issue_month": earliest_issue_month.strftime("%Y-%m"),
+                "latest_issue_month": latest_issue_month.strftime("%Y-%m"),
+                "issue_dates_are_complete": missing_raw_issue_date_count == 0, 
+                "issue_dates_are_parseable": invalid_issue_date_count == 0, 
+            }
+        ]
+    )
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    report_df.to_csv(output_path, index=False)
+
+    print("\nIssue-date integrity report created.")
+    print(f"Saved to: {output_path}")
+
+    print(report_df.to_string(index=False))
+
+    if missing_raw_issue_date_count != 0: 
+        raise ValueError(
+            f"Date column contains "
+            f"{missing_raw_issue_date_count:, } missing values."
+        )
+    
+    if invalid_issue_date_count != 0 :
+        raise ValueError(
+            f"Date column contains "
+            f"{invalid_issue_date_count:,} values that could not be parsed."
+        )
+    print("\nIssue-date integrity validation passed.")
+
+    return report_df
 
 if __name__ == "__main__":
     validated_df = validate_target_defined_dataset()
@@ -331,4 +415,6 @@ if __name__ == "__main__":
     create_column_profile_report(validated_df)
 
     create_identifier_integrity_report(validated_df)
-    
+
+    create_issue_date_integrity_report(validated_df)
+
