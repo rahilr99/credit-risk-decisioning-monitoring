@@ -22,6 +22,10 @@ INTERIM_COLUMN_PROFILE_PATH = (
     REPORTS_TABLE_DIR / "interim_column_profile.csv"
 )
 
+INTERIM_IDENTIFIER_INTEGRITY_PATH = (
+    REPORTS_TABLE_DIR / "interim_identifier_integrity.csv"
+)
+
 
 def validate_target_defined_dataset(
         input_path: Path = TARGET_DEFINED_DATA_PATH,
@@ -234,6 +238,89 @@ def create_column_profile_report(
 
     return report_df
 
+
+def create_identifier_integrity_report(
+        df: pd.DataFrame, 
+        identifier_column: str = "id", 
+        output_path: Path = INTERIM_IDENTIFIER_INTEGRITY_PATH, 
+) -> pd.DataFrame:
+    """
+    Create and save an integrity report for the loan-level identifier. 
+
+    This confirms that:
+    1. The identifier column exists.
+    2. The identifier column has no missing values. 
+    3. Each identifier value appears only once. 
+    """
+    if identifier_column not in df.columns:
+        raise ValueError(
+            f"Missing required identifier column: {identifier_column}"
+        )
+    
+    total_rows = df.shape[0]
+
+    missing_identifier_count = df[identifier_column].isna().sum()
+
+    unique_identifier_count = df[identifier_column].nunique(dropna=True)
+
+    rows_in_duplicate_identifier_groups = (
+        df[identifier_column]
+        .duplicated(keep=False)
+        .sum()
+    )
+
+    redundant_duplicate_identifier_count = (
+        df[identifier_column]
+        .duplicated(keep="first")
+        .sum()
+    )
+
+    report_df = pd.DataFrame(
+        [
+            {
+                "identifier_column": identifier_column, 
+                "total_rows": total_rows, 
+                "missing_identifier_count": missing_identifier_count,
+                "unique_identifier_count": unique_identifier_count, 
+                "rows_in_duplicate_identifier_groups": (
+                    rows_in_duplicate_identifier_groups
+                ), 
+                "redundant_duplicate_identifier_count": (
+                    redundant_duplicate_identifier_count
+                ), 
+                "identifier_is_complete": missing_identifier_count == 0, 
+                "identifier_is_unique": (
+                    redundant_duplicate_identifier_count == 0
+                ),
+            }
+        ]
+    )
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    report_df.to_csv(output_path, index=False)
+
+    print("\nIdentifier-integrity report created.")
+    print(f"Saved to: {output_path}")
+
+    print("\nIdentifier-integrity summary:")
+    print(report_df.to_string(index=False))
+
+    if missing_identifier_count != 0: 
+        raise ValueError(
+            f"Identifier column contains "
+            f"{missing_identifier_count:,}, missing values."
+        )
+    
+    if redundant_duplicate_identifier_count != 0: 
+        raise ValueError(
+            f"Identifier column contains "
+            f"{redundant_duplicate_identifier_count} redundant duplicates."
+        )
+    print("\nIdentifier-integrity validation passed.")
+
+    return report_df
+
+
 if __name__ == "__main__":
     validated_df = validate_target_defined_dataset()
 
@@ -242,3 +329,6 @@ if __name__ == "__main__":
     create_duplicate_summary_report(validated_df)
 
     create_column_profile_report(validated_df)
+
+    create_identifier_integrity_report(validated_df)
+    
