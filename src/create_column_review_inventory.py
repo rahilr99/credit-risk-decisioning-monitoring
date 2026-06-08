@@ -18,6 +18,13 @@ COLUMN_REVIEW_INVENTORY_PATH = (
     / "interim_column_review_inventory.csv"
 )
 
+COLUMN_REVIEW_INVENTORY_PATH = (
+    PROJECT_ROOT 
+    / "reports" 
+    / "tables"
+    / "interim_column_profile.csv"
+)
+
 TARGET_COLUMNS = {
     "bad_loan", 
 }
@@ -90,7 +97,7 @@ def assign_preliminary_column_role(
         column_name in POST_APPLICATION_LEAKAGE_COLUMNS
         or column_name.startswith(POST_APPLICATION_LEAKAGE_PREFIXES)
     ): 
-        return "psot_application_leakage"
+        return "post_application_leakage"
     
     if non_null_count == 0 or unique_count <=1:
         return "constant_or_empty"
@@ -129,7 +136,7 @@ def assign_preliminary_reason(column_role: str) -> str:
     """
     Explain why a preliminary role and action were assigned. 
 
-    The reason is stored in the inventory so hat each automatic
+    The reason is stored in the inventory so that each automatic
     classification remains understandable during later manual review. 
     """
 
@@ -167,3 +174,80 @@ def assign_preliminary_reason(column_role: str) -> str:
             "Review manually before deciding feature eligibility. "
         )
     raise ValueError(f"Unexpected preliminary column role: {column_role}")
+
+def create_column_review_inventory(
+        profile_path: Path = COLUMN_PROFILE_PATH, 
+        output_path: Path = COLUMN_REVIEW_INVENTORY_PATH, 
+) -> pd.DataFrame:
+    """
+    Create and save a preliminary column-review inventory. 
+
+    THe function applies only obvious automatic classifications.
+    Columns that require interpretation remain marked as 
+    "requires_review" for later manual review. 
+    """
+
+    profile_df = pd.read_csv(profile_path)
+
+    required_columns = {
+        "column_name", 
+        "non_null_count", 
+        "unique_count",
+    }
+
+    missing_columns = required_columns.difference(profile_df.columns)
+
+    if missing_columns: 
+        raise ValueError(
+            "Column profile report is missing required columns: "
+            f"{sorted(missing_columns)}"
+        )
+    
+    inventory_df = profile_df.copy()
+    inventory_df["column_role"] = inventory_df.apply(
+        lambda row: assign_preliminary_column_role(
+            column_name=row["column_name"], 
+            non_null_count = row["non_null_count"], 
+            unique_count = row["unique_count"],  
+        ), 
+        axis=1,
+    )
+
+    inventory_df["recommended_action"] = inventory_df["column_role"].apply(
+        assign_preliminary_action
+    )
+
+    inventory_df["reason"] = inventory_df["column_role"].apply(
+        assign_preliminary_reason
+    )
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    inventory_df.to_csv(
+        output_path, 
+        index=False,
+    )
+
+    print(f"Saved preliminary inventory to: {output_path}")
+    print(f"Column reviewed: {len(inventory_df):,}")
+
+    print("\nPreliminary role counts:")
+    print(
+        inventory_df["column_role"]
+        .value_counts()
+        .to_string()
+    )
+
+    requires_review_columns = inventory_df.loc[
+        inventory_df["column_role"] == "requires_review",
+        "column_name", 
+    ].tolist()
+
+    print("\nColumns requiring manual review:")
+    print(f"Count: {len(requires_review_columns):,}")
+
+    for column_name in requires_review_columns:
+        print(f"-{column_name}")
+
+    return inventory_df
+
