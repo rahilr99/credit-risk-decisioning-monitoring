@@ -8,7 +8,7 @@ COLUMN_PROFILE_PATH = (
     PROJECT_ROOT 
     / "reports"
     / "tables"
-    / "interim_column_review_inventory.csv"
+    / "interim_column_profile.csv"
 )
 
 COLUMN_REVIEW_INVENTORY_PATH = (
@@ -18,12 +18,6 @@ COLUMN_REVIEW_INVENTORY_PATH = (
     / "interim_column_review_inventory.csv"
 )
 
-COLUMN_REVIEW_INVENTORY_PATH = (
-    PROJECT_ROOT 
-    / "reports" 
-    / "tables"
-    / "interim_column_profile.csv"
-)
 
 TARGET_COLUMNS = {
     "bad_loan", 
@@ -69,39 +63,38 @@ POST_APPLICATION_LEAKAGE_COLUMNS = {
 }
 
 def assign_preliminary_column_role(
-        column_name: str, 
-        non_null_count: int, 
-        unique_count: int, 
+    column_name: str,
+    unique_non_missing_count: int,
+    is_constant_non_missing: bool,
 ) -> str:
     """
-    Assign an initial role to a column using only obvious rules. 
+    Assign an initial role to a column using only obvious rules.
 
-    Ambiguous columns are intentionally marked as 'required_review'
-    so that they acan be reviewed manually later. 
-
+    Ambiguous columns are intentionally marked as 'requires_review'
+    so that they can be reviewed manually later.
     """
 
     if column_name in TARGET_COLUMNS:
         return "target"
-    
+
     if column_name in TARGET_SOURCE_COLUMNS:
         return "target_source"
-    
+
     if column_name in IDENTIFIER_COLUMNS:
         return "identifier"
-    
+
     if column_name in MONITORING_ONLY_COLUMNS:
         return "monitoring_only"
-    
+
     if (
         column_name in POST_APPLICATION_LEAKAGE_COLUMNS
         or column_name.startswith(POST_APPLICATION_LEAKAGE_PREFIXES)
-    ): 
+    ):
         return "post_application_leakage"
-    
-    if non_null_count == 0 or unique_count <=1:
+
+    if unique_non_missing_count == 0 or is_constant_non_missing:
         return "constant_or_empty"
-    
+
     return "requires_review"
 
 
@@ -109,7 +102,7 @@ def assign_preliminary_action(column_role: str) -> str:
     """
     Recommend an initial action based on the preliminary column role. 
 
-    These actions are intentionally consservative. Columns that require
+    These actions are intentionally conservative. Columns that require
       manual interpretation remain marked as 'requires_review'. 
     """
 
@@ -160,17 +153,17 @@ def assign_preliminary_reason(column_role: str) -> str:
         )
     if column_role == "post_application_leakage":
         return(
-            "Contains information generated afeter loan issuance or"
+            "Contains information generated after loan issuance or"
             " during repayment performance. Exclude to prevent leakage."
         )
     if column_role == "constant_or_empty":
         return (
-            "Column is empty or contains no meaningful variation."
+            "Column is empty or contains no meaningful variation. "
             "Exclude from model features. "
         )
     if column_role == "requires_review": 
         return (
-            "No obvious automatic classificatioln applies. "
+            "No obvious automatic classification applies. "
             "Review manually before deciding feature eligibility. "
         )
     raise ValueError(f"Unexpected preliminary column role: {column_role}")
@@ -182,7 +175,7 @@ def create_column_review_inventory(
     """
     Create and save a preliminary column-review inventory. 
 
-    THe function applies only obvious automatic classifications.
+    The function applies only obvious automatic classifications.
     Columns that require interpretation remain marked as 
     "requires_review" for later manual review. 
     """
@@ -190,9 +183,9 @@ def create_column_review_inventory(
     profile_df = pd.read_csv(profile_path)
 
     required_columns = {
-        "column_name", 
-        "non_null_count", 
-        "unique_count",
+        "column_name",
+        "unique_non_missing_count",
+        "is_constant_non_missing",
     }
 
     missing_columns = required_columns.difference(profile_df.columns)
@@ -206,10 +199,10 @@ def create_column_review_inventory(
     inventory_df = profile_df.copy()
     inventory_df["column_role"] = inventory_df.apply(
         lambda row: assign_preliminary_column_role(
-            column_name=row["column_name"], 
-            non_null_count = row["non_null_count"], 
-            unique_count = row["unique_count"],  
-        ), 
+            column_name=row["column_name"],
+            unique_non_missing_count=row["unique_non_missing_count"],
+            is_constant_non_missing=row["is_constant_non_missing"],
+        ),
         axis=1,
     )
 
@@ -229,7 +222,7 @@ def create_column_review_inventory(
     )
 
     print(f"Saved preliminary inventory to: {output_path}")
-    print(f"Column reviewed: {len(inventory_df):,}")
+    print(f"Columns reviewed: {len(inventory_df):,}")
 
     print("\nPreliminary role counts:")
     print(
@@ -247,7 +240,12 @@ def create_column_review_inventory(
     print(f"Count: {len(requires_review_columns):,}")
 
     for column_name in requires_review_columns:
-        print(f"-{column_name}")
+        print(f"- {column_name}")
 
     return inventory_df
+
+
+if __name__ == "__main__":
+    create_column_review_inventory()
+
 
