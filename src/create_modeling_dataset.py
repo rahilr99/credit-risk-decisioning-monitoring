@@ -308,3 +308,167 @@ def validate_modeling_base_dataset(
             f"Target column {target_column!r} contains invalid values: "
             f"{invalid_target_values}. Expected only 0 and 1."
         )
+
+def create_column_selection_report(
+    column_usage_df: pd.DataFrame,
+    column_groups: dict[str, list[str]],
+) -> pd.DataFrame:
+    """
+    Create an audit report showing which columns were selected for the modeling base
+    dataset and what role each selected column plays.
+
+    The report includes all columns from the column usage inventory, not just the
+    selected columns. This makes it easy to see both included and excluded columns.
+    """
+    report_df = column_usage_df.copy()
+
+    role_by_column: dict[str, list[str]] = {}
+
+    def add_role(columns: list[str], role: str) -> None:
+        """
+        Attach a modeling-base role to each column in a list.
+        """
+        for column in columns:
+            role_by_column.setdefault(column, [])
+
+            if role not in role_by_column[column]:
+                role_by_column[column].append(role)
+
+    add_role(column_groups["identifier_columns"], "identifier_tracking")
+    add_role(column_groups["time_split_columns"], "time_split")
+    add_role(column_groups["modeling_columns"], "model_feature")
+    add_role(column_groups["target_columns"], "target")
+
+    selected_columns = column_groups["selected_columns"]
+    selected_column_set = set(selected_columns)
+
+    selected_column_order = {
+        column: position
+        for position, column in enumerate(selected_columns, start=1)
+    }
+
+    report_df["selected_for_modeling_base"] = report_df["column_name"].isin(
+        selected_column_set
+    )
+
+    report_df["role_in_modeling_base"] = report_df["column_name"].map(
+        lambda column: ", ".join(role_by_column.get(column, []))
+    )
+
+    report_df["modeling_base_column_order"] = report_df["column_name"].map(
+        selected_column_order
+    )
+
+    report_df = (
+        report_df
+        .sort_values(
+            by=[
+                "selected_for_modeling_base",
+                "modeling_base_column_order",
+                "column_name",
+            ],
+            ascending=[False, True, True],
+            na_position="last",
+        )
+        .reset_index(drop=True)
+    )
+
+    return report_df
+
+def save_dataframe_to_csv(
+    df: pd.DataFrame,
+    path: Path | str,
+    compression: str | None = None,
+) -> None:
+    """
+    Save a DataFrame to CSV, creating the parent directory if needed.
+    """
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+    df.to_csv(path, index=False, compression=compression)
+
+
+def create_modeling_base_dataset(
+    target_defined_dataset_path: Path | str = DEFAULT_TARGET_DEFINED_DATASET_PATH,
+    column_usage_inventory_path: Path | str = DEFAULT_COLUMN_USAGE_INVENTORY_PATH,
+    output_dataset_path: Path | str = DEFAULT_MODELING_BASE_DATASET_PATH,
+    column_selection_report_path: Path | str = DEFAULT_COLUMN_SELECTION_REPORT_PATH,
+) -> pd.DataFrame:
+    """
+    Main workflow for creating the modeling base dataset.
+    """
+    print("\nLoading column usage inventory...")
+    column_usage_df = load_column_usage_inventory(column_usage_inventory_path)
+    print(f"Inventory rows: {len(column_usage_df):,}")
+
+    print("\nCreating modeling-base column groups...")
+    column_groups = get_modeling_base_column_groups(column_usage_df)
+
+    print(f"Modeling feature columns: {len(column_groups['modeling_columns']):,}")
+    print(f"Target columns: {len(column_groups['target_columns']):,}")
+    print(f"Identifier tracking columns: {len(column_groups['identifier_columns']):,}")
+    print(f"Time split columns: {len(column_groups['time_split_columns']):,}")
+    print(f"Total selected columns: {len(column_groups['selected_columns']):,}")
+
+    print("\nReading target-defined dataset header...")
+    available_dataset_columns = get_csv_columns(target_defined_dataset_path)
+    print(f"Available dataset columns: {len(available_dataset_columns):,}")
+
+    print("\nValidating selected columns...")
+    validate_modeling_base_column_groups(
+        available_dataset_columns=available_dataset_columns,
+        column_usage_df=column_usage_df,
+        column_groups=column_groups,
+    )
+    print("Column validation passed.")
+
+    print("\nLoading selected columns from target-defined dataset...")
+    modeling_base_df = load_target_defined_dataset(
+        path=target_defined_dataset_path,
+        usecols=column_groups["selected_columns"],
+    )
+
+    print(f"Rows loaded: {len(modeling_base_df):,}")
+    print(f"Columns loaded: {modeling_base_df.shape[1]:,}")
+
+    print("\nValidating modeling base dataset...")
+    validate_modeling_base_dataset(
+        modeling_base_df=modeling_base_df,
+        column_groups=column_groups,
+    )
+    print("Dataset validation passed.")
+
+    target_column = column_groups["target_columns"][0]
+    target_rate = modeling_base_df[target_column].mean()
+
+    print("\nTarget summary:")
+    print(modeling_base_df[target_column].value_counts().sort_index().to_string())
+    print(f"Bad-loan rate: {target_rate:.2%}")
+
+    print("\nSaving modeling base dataset...")
+    save_dataframe_to_csv(
+        df=modeling_base_df,
+        path=output_dataset_path,
+        compression="gzip",
+    )
+    print(f"Saved dataset to: {output_dataset_path}")
+
+    print("\nCreating column selection report...")
+    column_selection_report_df = create_column_selection_report(
+        column_usage_df=column_usage_df,
+        column_groups=column_groups,
+    )
+
+    save_dataframe_to_csv(
+        df=column_selection_report_df,
+        path=column_selection_report_path,
+    )
+    print(f"Saved report to: {column_selection_report_path}")
+
+    print("\nModeling base dataset creation complete.")
+
+    return modeling_base_df
+
+if __name__ == "__main__":
+    create_modeling_base_dataset()
