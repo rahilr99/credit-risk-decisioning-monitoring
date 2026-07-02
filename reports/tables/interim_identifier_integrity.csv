@@ -1,0 +1,2 @@
+identifier_column,total_rows,missing_identifier_count,unique_identifier_count,rows_in_duplicate_identifier_groups,redundant_duplicate_identifier_count,identifier_is_complete,identifier_is_unique
+id,1369566,0,1369566,0,0,True,True

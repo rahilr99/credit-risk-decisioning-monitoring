@@ -1,0 +1,2 @@
+date_column,total_rows,missing_raw_issue_date_count,invalid_issue_date_count,unique_issue_month_count,earliest_issue_month,latest_issue_month,issue_dates_are_complete,issue_dates_are_parseable
+issue_d,1369566,0,0,139,2007-06,2018-12,True,True

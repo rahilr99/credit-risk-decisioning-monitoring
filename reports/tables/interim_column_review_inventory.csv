@@ -1,0 +1,153 @@
+column_name,dtype,unique_non_missing_count,missing_count,missing_percentage,is_constant_non_missing,column_role,recommended_action,reason
+member_id,float64,0,1369566,1.0,True,constant_or_empty,exclude_from_model_features,Column is empty or contains no meaningful variation. Exclude from model features. 
+deferral_term,float64,1,1362187,0.9946121618089234,True,constant_or_empty,exclude_from_model_features,Column is empty or contains no meaningful variation. Exclude from model features. 
+hardship_length,float64,1,1362187,0.9946121618089234,True,post_application_leakage,exclude_from_model_features,Contains information generated after loan issuance or during repayment performance. Exclude to prevent leakage.
+hardship_type,object,1,1362187,0.9946121618089234,True,post_application_leakage,exclude_from_model_features,Contains information generated after loan issuance or during repayment performance. Exclude to prevent leakage.
+policy_code,float64,1,0,0.0,True,constant_or_empty,exclude_from_model_features,Column is empty or contains no meaningful variation. Exclude from model features. 
+application_type,object,2,0,0.0,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+bad_loan,int64,2,0,0.0,False,target,retain_as_target,Outcome variable used for supervised modeling.
+debt_settlement_flag,object,2,0,0.0,False,post_application_leakage,exclude_from_model_features,Contains information generated after loan issuance or during repayment performance. Exclude to prevent leakage.
+disbursement_method,object,2,0,0.0,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+hardship_flag,object,2,0,0.0,False,post_application_leakage,exclude_from_model_features,Contains information generated after loan issuance or during repayment performance. Exclude to prevent leakage.
+initial_list_status,object,2,0,0.0,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+pymnt_plan,object,2,0,0.0,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+term,object,2,0,0.0,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+hardship_status,object,3,1362187,0.9946121618089234,False,post_application_leakage,exclude_from_model_features,Contains information generated after loan issuance or during repayment performance. Exclude to prevent leakage.
+settlement_status,object,3,1335369,0.9750307761728898,False,post_application_leakage,exclude_from_model_features,Contains information generated after loan issuance or during repayment performance. Exclude to prevent leakage.
+verification_status,object,3,0,0.0,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+verification_status_joint,object,3,1341811,0.9797344560247552,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+hardship_loan_status,object,5,1362187,0.9946121618089234,False,post_application_leakage,exclude_from_model_features,Contains information generated after loan issuance or during repayment performance. Exclude to prevent leakage.
+num_tl_30dpd,float64,5,70276,0.051312605599146,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+home_ownership,object,6,0,0.0,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+loan_status,object,6,0,0.0,False,target_source,exclude_from_model_features,Source column used to construct the target. Exclude to prevent direct target leakage.
+num_tl_120dpd_2m,float64,6,121510,0.0887215366035663,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+grade,object,7,0,0.0,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+sec_app_inq_last_6mths,float64,7,1348918,0.984923691154716,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+acc_now_delinq,float64,8,29,2.117459107483685e-05,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+hardship_reason,object,9,1362187,0.9946121618089234,False,post_application_leakage,exclude_from_model_features,Contains information generated after loan issuance or during repayment performance. Exclude to prevent leakage.
+chargeoff_within_12_mths,float64,11,145,0.0001058729553741,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+emp_length,object,11,80401,0.0587054585175157,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+pub_rec_bankruptcies,float64,12,1365,0.0009966660971431,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+sec_app_collections_12_mths_ex_med,float64,12,1348918,0.984923691154716,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+purpose,object,14,0,0.0,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+collections_12_mths_ex_med,float64,15,145,0.0001058729553741,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+sec_app_chargeoff_within_12_mths,float64,15,1348918,0.984923691154716,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+sec_app_mort_acc,float64,18,1348918,0.984923691154716,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+open_acc_6m,float64,19,812048,0.5929235976944521,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+open_il_12m,float64,19,812047,0.5929228675361392,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+mths_since_recent_inq,float64,26,178574,0.1303872905723418,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+hardship_start_date,object,27,1362187,0.9946121618089234,False,post_application_leakage,exclude_from_model_features,Contains information generated after loan issuance or during repayment performance. Exclude to prevent leakage.
+open_rv_12m,float64,27,812047,0.5929228675361392,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+payment_plan_start_date,object,27,1362187,0.9946121618089234,False,post_application_leakage,exclude_from_model_features,Contains information generated after loan issuance or during repayment performance. Exclude to prevent leakage.
+hardship_end_date,object,28,1362187,0.9946121618089234,False,post_application_leakage,exclude_from_model_features,Contains information generated after loan issuance or during repayment performance. Exclude to prevent leakage.
+inq_last_6mths,float64,28,30,2.1904749387762252e-05,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+inq_fi,float64,30,812047,0.5929228675361392,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+num_tl_90g_dpd_24m,float64,30,70276,0.051312605599146,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+open_il_24m,float64,31,812047,0.5929228675361392,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+delinq_2yrs,float64,32,29,2.117459107483685e-05,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+num_tl_op_past_12m,float64,32,70276,0.051312605599146,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+hardship_dpd,float64,34,1362187,0.9946121618089234,False,post_application_leakage,exclude_from_model_features,Contains information generated after loan issuance or during repayment performance. Exclude to prevent leakage.
+num_actv_bc_tl,float64,34,70276,0.051312605599146,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+sub_grade,object,35,0,0.0,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+tax_liens,float64,37,105,7.666662285716789e-05,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+sec_app_open_act_il,float64,38,1348918,0.984923691154716,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+mort_acc,float64,39,50030,0.0365298203956581,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+num_accts_ever_120_pd,float64,39,70276,0.051312605599146,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+pub_rec,float64,39,29,2.117459107483685e-05,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+settlement_term,float64,40,1335369,0.9750307761728898,False,post_application_leakage,exclude_from_model_features,Contains information generated after loan issuance or during repayment performance. Exclude to prevent leakage.
+inq_last_12m,float64,43,812048,0.5929235976944521,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+num_rev_tl_bal_gt_0,float64,46,70276,0.051312605599146,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+open_rv_24m,float64,47,812047,0.5929228675361392,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+fico_range_high,float64,48,0,0.0,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+fico_range_low,float64,48,0,0.0,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+open_act_il,float64,50,812047,0.5929228675361392,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+addr_state,object,51,0,0.0,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+num_actv_rev_tl,float64,52,70276,0.051312605599146,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+num_bc_sats,float64,52,58590,0.0427799755542996,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+total_cu_tl,float64,53,812048,0.5929235976944521,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+acc_open_past_24mths,float64,55,50030,0.0365298203956581,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+sec_app_open_acc,float64,55,1348918,0.984923691154716,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+sec_app_fico_range_high,float64,60,1348918,0.984923691154716,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+sec_app_fico_range_low,float64,60,1348918,0.984923691154716,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+num_bc_tl,float64,68,70276,0.051312605599146,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+sec_app_num_rev_accts,float64,68,1348918,0.984923691154716,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+last_fico_range_low,float64,71,0,0.0,False,post_application_leakage,exclude_from_model_features,Contains information generated after loan issuance or during repayment performance. Exclude to prevent leakage.
+last_fico_range_high,float64,72,0,0.0,False,post_application_leakage,exclude_from_model_features,Contains information generated after loan issuance or during repayment performance. Exclude to prevent leakage.
+num_op_rev_tl,float64,74,70276,0.051312605599146,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+debt_settlement_flag_date,object,83,1335369,0.9750307761728898,False,post_application_leakage,exclude_from_model_features,Contains information generated after loan issuance or during repayment performance. Exclude to prevent leakage.
+num_sats,float64,83,58590,0.0427799755542996,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+open_acc,float64,84,29,2.117459107483685e-05,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+settlement_date,object,90,1335369,0.9750307761728898,False,post_application_leakage,exclude_from_model_features,Contains information generated after loan issuance or during repayment performance. Exclude to prevent leakage.
+next_pymnt_d,object,101,1345310,0.9822892799616812,False,post_application_leakage,exclude_from_model_features,Contains information generated after loan issuance or during repayment performance. Exclude to prevent leakage.
+num_rev_accts,float64,108,70277,0.0513133357574589,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+num_il_tl,float64,114,70276,0.051312605599146,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+sec_app_mths_since_last_major_derog,float64,116,1362090,0.9945413364525696,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+mths_since_last_record,float64,126,1136114,0.8295430815309376,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+last_pymnt_d,object,136,2427,0.0017720942254699,False,post_application_leakage,exclude_from_model_features,Contains information generated after loan issuance or during repayment performance. Exclude to prevent leakage.
+issue_d,object,139,0,0.0,False,monitoring_only,retain_for_monitoring,"Retain for portfolio monitoring or cohort analysis, but do not automatically use as a model feature."
+last_credit_pull_d,object,141,57,4.1619023836748285e-05,False,post_application_leakage,exclude_from_model_features,Contains information generated after loan issuance or during repayment performance. Exclude to prevent leakage.
+total_acc,float64,144,29,2.117459107483685e-05,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+mths_since_last_delinq,float64,163,690126,0.5039012358659605,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+mths_since_recent_bc_dlq,float64,169,1045111,0.7630964845797866,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+mths_since_recent_revol_delinq,float64,170,911978,0.6658883179050882,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+all_util,float64,172,812103,0.592963756401663,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+mths_since_last_major_derog,float64,174,1009260,0.7369195789030978,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+mo_sin_rcnt_tl,float64,197,70276,0.051312605599146,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+il_util,float64,238,887579,0.6480731852280212,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+percent_bc_gt_75,float64,245,64617,0.0471806397063011,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+mo_sin_rcnt_rev_tl_op,float64,288,70277,0.0513133357574589,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+mths_since_rcnt_il,float64,346,827012,0.6038496866890679,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+mths_since_recent_bc,float64,491,63266,0.0461941958255388,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+mo_sin_old_il_acct,float64,523,109109,0.0796668433649784,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+sec_app_earliest_cr_line,object,582,1348918,0.984923691154716,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+pct_tl_nvr_dlq,float64,633,70430,0.0514250499793365,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+int_rate,float64,672,0,0.0,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+earliest_cr_line,object,739,29,2.117459107483685e-05,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+mo_sin_old_rev_tl_op,float64,758,70277,0.0513133357574589,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+zip_code,object,946,1,7.301583129254085e-07,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+sec_app_revol_util,float64,1127,1349285,0.9851916592555596,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+revol_util,float64,1380,924,0.000674666281143,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+bc_util,float64,1446,64983,0.0474478776488318,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+funded_amnt,float64,1563,0,0.0,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+loan_amnt,float64,1563,0,0.0,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+delinq_amnt,float64,2030,29,2.117459107483685e-05,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+settlement_percentage,float64,2068,1335369,0.9750307761728898,False,post_application_leakage,exclude_from_model_features,Contains information generated after loan issuance or during repayment performance. Exclude to prevent leakage.
+dti_joint,float64,3701,1341585,0.979569440246034,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+orig_projected_additional_accrued_interest,float64,4740,1364358,0.9961973355062844,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+annual_inc_joint,float64,5492,1341582,0.9795672497710952,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+hardship_last_payment_amount,float64,6429,1362187,0.9946121618089234,False,post_application_leakage,exclude_from_model_features,Contains information generated after loan issuance or during repayment performance. Exclude to prevent leakage.
+hardship_amount,float64,6526,1362187,0.9946121618089234,False,post_application_leakage,exclude_from_model_features,Contains information generated after loan issuance or during repayment performance. Exclude to prevent leakage.
+dti,float64,7230,398,0.0002906030085443,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+hardship_payoff_balance_amount,float64,7370,1362187,0.9946121618089234,False,post_application_leakage,exclude_from_model_features,Contains information generated after loan issuance or during repayment performance. Exclude to prevent leakage.
+funded_amnt_inv,float64,10043,0,0.0,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+tot_coll_amt,float64,12951,70276,0.051312605599146,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+total_rec_late_fee,float64,16904,0,0.0,False,post_application_leakage,exclude_from_model_features,Contains information generated after loan issuance or during repayment performance. Exclude to prevent leakage.
+total_bc_limit,float64,17189,50030,0.0365298203956581,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+revol_bal_joint,float64,17645,1348919,0.984924421313029,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+out_prncp,float64,20073,0,0.0,False,post_application_leakage,exclude_from_model_features,Contains information generated after loan issuance or during repayment performance. Exclude to prevent leakage.
+out_prncp_inv,float64,20161,0,0.0,False,post_application_leakage,exclude_from_model_features,Contains information generated after loan issuance or during repayment performance. Exclude to prevent leakage.
+settlement_amount,float64,21924,1335369,0.9750307761728898,False,post_application_leakage,exclude_from_model_features,Contains information generated after loan issuance or during repayment performance. Exclude to prevent leakage.
+total_rev_hi_lim,float64,27046,70276,0.051312605599146,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+max_bal_bc,float64,27660,812047,0.5929228675361392,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+title,object,63153,16944,0.0123718024542081,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+annual_inc,float64,65151,4,2.920633251701634e-06,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+bc_open_to_buy,float64,75206,64204,0.0468790843230629,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+avg_cur_bal,float64,77137,70299,0.0513293992403432,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+installment,float64,83990,0,0.0,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+revol_bal,float64,84446,0,0.0,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+total_bal_il,float64,119917,812047,0.5929228675361392,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+desc,object,124406,1243601,0.9080256081123508,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+recoveries,float64,132777,0,0.0,False,post_application_leakage,exclude_from_model_features,Contains information generated after loan issuance or during repayment performance. Exclude to prevent leakage.
+collection_recovery_fee,float64,146222,0,0.0,False,post_application_leakage,exclude_from_model_features,Contains information generated after loan issuance or during repayment performance. Exclude to prevent leakage.
+total_il_high_credit_limit,float64,163471,70276,0.051312605599146,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+total_bal_ex_mort,float64,178967,50030,0.0365298203956581,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+total_rec_prncp,float64,220290,0,0.0,False,post_application_leakage,exclude_from_model_features,Contains information generated after loan issuance or during repayment performance. Exclude to prevent leakage.
+emp_title,object,383313,87969,0.0642312966297352,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+tot_cur_bal,float64,402890,70276,0.051312605599146,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+tot_hi_cred_lim,float64,430134,70276,0.051312605599146,False,requires_review,requires_review,No obvious automatic classification applies. Review manually before deciding feature eligibility. 
+total_rec_int,float64,523499,0,0.0,False,post_application_leakage,exclude_from_model_features,Contains information generated after loan issuance or during repayment performance. Exclude to prevent leakage.
+last_pymnt_amnt,float64,694529,0,0.0,False,post_application_leakage,exclude_from_model_features,Contains information generated after loan issuance or during repayment performance. Exclude to prevent leakage.
+total_pymnt_inv,float64,1027108,0,0.0,False,post_application_leakage,exclude_from_model_features,Contains information generated after loan issuance or during repayment performance. Exclude to prevent leakage.
+total_pymnt,float64,1280652,0,0.0,False,post_application_leakage,exclude_from_model_features,Contains information generated after loan issuance or during repayment performance. Exclude to prevent leakage.
+id,int64,1369566,0,0.0,False,identifier,exclude_from_model_features,Record identifier or record-level reference. Not suitable as a model feature. 
+url,object,1369566,0,0.0,False,identifier,exclude_from_model_features,Record identifier or record-level reference. Not suitable as a model feature. 

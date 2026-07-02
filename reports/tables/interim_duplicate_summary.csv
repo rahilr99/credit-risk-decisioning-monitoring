@@ -1,0 +1,2 @@
+total_rows,rows_in_duplicate_groups,redundant_duplicate_rows,unique_rows_after_deduplication,redundant_duplicate_percentage
+1369566,0,0,1369566,0.0
