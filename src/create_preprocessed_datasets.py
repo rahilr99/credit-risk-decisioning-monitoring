@@ -132,3 +132,156 @@ def validate_feature_type_profile(
             f"{missing_columns}"
         )
     
+def get_baseline_feature_groups(
+    feature_type_profile_df: pd.DataFrame,
+    modeling_columns: list[str],
+    feature_name_column: str = FEATURE_NAME_COLUMN,
+    feature_type_column: str = FEATURE_TYPE_COLUMN,
+) -> dict[str, list[str]]:
+    """
+    Group approved modeling features into baseline preprocessing groups.
+    """
+    validate_feature_type_profile(
+        feature_type_profile_df=feature_type_profile_df,
+        feature_name_column=feature_name_column,
+        feature_type_column=feature_type_column,
+    )
+
+    profile_df = feature_type_profile_df.copy()
+
+    duplicate_features = (
+        profile_df[profile_df[feature_name_column].duplicated()][feature_name_column]
+        .unique()
+        .tolist()
+    )
+
+    if duplicate_features:
+        raise ValueError(
+            "The feature type profile contains duplicate feature rows: "
+            f"{duplicate_features}"
+        )
+
+    profile_feature_set = set(profile_df[feature_name_column])
+
+    missing_profile_features = [
+        column for column in modeling_columns if column not in profile_feature_set
+    ]
+
+    if missing_profile_features:
+        raise ValueError(
+            "Some approved modeling columns are missing from the feature type profile: "
+            f"{missing_profile_features}"
+        )
+
+    profile_df = profile_df[
+        profile_df[feature_name_column].isin(modeling_columns)
+    ].copy()
+
+    recognized_feature_types = (
+        NUMERIC_FEATURE_TYPES
+        + CATEGORICAL_FEATURE_TYPES
+        + EXCLUDED_BASELINE_FEATURE_TYPES
+    )
+
+    unexpected_feature_types = sorted(
+        set(profile_df[feature_type_column]) - set(recognized_feature_types)
+    )
+
+    if unexpected_feature_types:
+        raise ValueError(
+            "The feature type profile contains unexpected feature types: "
+            f"{unexpected_feature_types}"
+        )
+
+    numeric_features = profile_df.loc[
+        profile_df[feature_type_column].isin(NUMERIC_FEATURE_TYPES),
+        feature_name_column,
+    ].tolist()
+
+    categorical_features = profile_df.loc[
+        profile_df[feature_type_column].isin(CATEGORICAL_FEATURE_TYPES),
+        feature_name_column,
+    ].tolist()
+
+    excluded_features = profile_df.loc[
+        profile_df[feature_type_column].isin(EXCLUDED_BASELINE_FEATURE_TYPES),
+        feature_name_column,
+    ].tolist()
+
+    return {
+        "numeric_features": numeric_features,
+        "categorical_features": categorical_features,
+        "excluded_features": excluded_features,
+    }
+
+
+def get_baseline_modeling_features(
+    feature_groups: dict[str, list[str]],
+) -> list[str]:
+    """
+    Get the features included in the baseline preprocessing pipeline.
+    """
+    return (
+        feature_groups["numeric_features"]
+        + feature_groups["categorical_features"]
+    )
+
+def validate_split_dataset_columns(
+    df: pd.DataFrame,
+    required_columns: list[str],
+    dataset_name: str,
+) -> None:
+    """
+    Validate that a split dataset contains all required columns.
+    """
+    available_columns = set(df.columns)
+
+    missing_columns = [
+        column for column in required_columns if column not in available_columns
+    ]
+
+    if missing_columns:
+        raise ValueError(
+            f"The {dataset_name} dataset is missing required columns: "
+            f"{missing_columns}"
+        )
+
+
+def build_preprocessing_pipeline(
+    numeric_features: list[str],
+    categorical_features: list[str],
+) -> ColumnTransformer:
+    """
+    Build the baseline preprocessing pipeline.
+    """
+    numeric_transformer = Pipeline(
+        steps=[
+            ("imputer", SimpleImputer(strategy="median")),
+            ("scaler", StandardScaler()),
+        ]
+    )
+
+    categorical_transformer = Pipeline(
+        steps=[
+            (
+                "imputer",
+                SimpleImputer(strategy="constant", fill_value="Missing"),
+            ),
+            (
+                "one_hot_encoder",
+                OneHotEncoder(handle_unknown="ignore"),
+            ),
+        ]
+    )
+
+    preprocessing_pipeline = ColumnTransformer(
+        transformers=[
+            ("numeric", numeric_transformer, numeric_features),
+            ("categorical", categorical_transformer, categorical_features),
+        ],
+        remainder="drop",
+        sparse_threshold=1.0,
+        verbose_feature_names_out=True,
+    )
+
+    return preprocessing_pipeline
