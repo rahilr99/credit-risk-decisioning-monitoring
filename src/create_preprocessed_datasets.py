@@ -285,3 +285,61 @@ def build_preprocessing_pipeline(
     )
 
     return preprocessing_pipeline
+
+def get_preprocessed_feature_names(
+    preprocessing_pipeline: ColumnTransformer,
+) -> list[str]:
+    """
+    Get output feature names from a fitted preprocessing pipeline.
+    """
+    return preprocessing_pipeline.get_feature_names_out().tolist()
+
+def save_sparse_matrix(
+    matrix: sparse.spmatrix,
+    path: Path | str,
+) -> None:
+    """
+    Save a sparse matrix to disk.
+    """
+    path = Path(path)
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+    sparse.save_npz(path, matrix)
+
+
+def save_target_vector(
+    target: pd.Series,
+    path: Path | str,
+    target_column: str = DEFAULT_TARGET_COLUMN,
+) -> None:
+    """
+    Save a target vector to disk.
+    """
+    path = Path(path)
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+    target_df = target.to_frame(name=target_column)
+
+    target_df.to_csv(path, index=False)
+    
+
+def save_feature_names(
+    feature_names: list[str],
+    path: Path | str,
+) -> None:
+    """
+    Save preprocessed feature names to disk.
+    """
+    path = Path(path)
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+    feature_names_df = pd.DataFrame(
+        {
+            "feature_name": feature_names,
+        }
+    )
+
+    feature_names_df.to_csv(path, index=False)
