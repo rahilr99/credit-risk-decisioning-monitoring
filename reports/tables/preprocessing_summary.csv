@@ -1,0 +1,14 @@
+metric,value
+train_input_rows,958696
+validation_input_rows,205434
+test_input_rows,205436
+train_preprocessed_rows,958696
+validation_preprocessed_rows,205434
+test_preprocessed_rows,205436
+preprocessed_feature_count,104
+numeric_feature_count,68
+categorical_feature_count,5
+excluded_feature_count,1
+train_nonzero_values,69984808
+validation_nonzero_values,14996682
+test_nonzero_values,14996828
