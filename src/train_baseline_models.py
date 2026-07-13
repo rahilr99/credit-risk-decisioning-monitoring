@@ -261,3 +261,45 @@ def validate_dataset_alignment(
     )
 
 
+
+def train_dummy_baseline(
+    X_train: sparse.csr_matrix,
+    y_train: pd.Series,
+) -> DummyClassifier:
+    """Train a prior-probability dummy classifier."""
+    log_step("Training prior-probability dummy baseline")
+
+    dummy_model = DummyClassifier(strategy="prior")
+
+    dummy_model.fit(X_train, y_train)
+
+    log_step(
+        "Dummy baseline trained successfully with training bad-loan "
+        f"rate {y_train.mean():.4f}"
+    )
+
+    return dummy_model
+
+
+def train_logistic_baseline(
+    X_train: sparse.csr_matrix,
+    y_train: pd.Series,
+) -> LogisticRegression:
+    """Train the baseline logistic regression model."""
+    log_step("Training logistic regression baseline")
+
+    logistic_model = LogisticRegression(
+        solver="saga",
+        C=1.0,
+        max_iter=1000,
+        random_state=RANDOM_STATE,
+    )
+
+    logistic_model.fit(X_train, y_train)
+
+    log_step(
+        "Logistic regression baseline trained successfully in "
+        f"{int(logistic_model.n_iter_[0]):,} iterations"
+    )
+
+    return logistic_model
