@@ -303,3 +303,65 @@ def train_logistic_baseline(
     )
 
     return logistic_model
+
+def generate_bad_loan_probabilities(
+    model: DummyClassifier | LogisticRegression,
+    X: sparse.csr_matrix,
+    model_name: str,
+    dataset_name: str,
+) -> np.ndarray:
+    """Generate and validate predicted bad-loan probabilities."""
+    log_step(
+        f"Generating {dataset_name} probabilities with {model_name}"
+    )
+
+    if not hasattr(model, "classes_"):
+        raise ValueError(
+            f"{model_name} has not been fitted before prediction."
+        )
+
+    class_labels = np.asarray(model.classes_)
+    bad_class_positions = np.flatnonzero(class_labels == 1)
+
+    if len(bad_class_positions) != 1:
+        raise ValueError(
+            f"{model_name} does not contain exactly one class labelled 1. "
+            f"Fitted classes: {class_labels.tolist()}"
+        )
+
+    probability_matrix = model.predict_proba(X)
+
+    if probability_matrix.shape[0] != X.shape[0]:
+        raise ValueError(
+            f"{model_name} returned {probability_matrix.shape[0]:,} "
+            f"probability rows for {X.shape[0]:,} input rows."
+        )
+
+    bad_class_position = bad_class_positions[0]
+
+    bad_loan_probabilities = probability_matrix[
+        :,
+        bad_class_position,
+    ]
+
+    if not np.isfinite(bad_loan_probabilities).all():
+        raise ValueError(
+            f"{model_name} produced non-finite probabilities."
+        )
+
+    if (
+        (bad_loan_probabilities < 0).any()
+        or (bad_loan_probabilities > 1).any()
+    ):
+        raise ValueError(
+            f"{model_name} produced probabilities outside the "
+            "valid range from 0 to 1."
+        )
+
+    log_step(
+        f"Generated {len(bad_loan_probabilities):,} {dataset_name} "
+        f"probabilities with mean "
+        f"{bad_loan_probabilities.mean():.4f}"
+    )
+
+    return bad_loan_probabilities
