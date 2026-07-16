@@ -365,3 +365,63 @@ def generate_bad_loan_probabilities(
     )
 
     return bad_loan_probabilities
+
+
+def calculate_probability_metrics(
+    y_true: pd.Series,
+    bad_loan_probabilities: np.ndarray,
+    model_name: str,
+    dataset_name: str,
+) -> dict[str, str | int | float]:
+    """Calculate probability-based classification metrics."""
+    log_step(
+        f"Calculating {dataset_name} probability metrics for "
+        f"{model_name}"
+    )
+
+    if len(y_true) != len(bad_loan_probabilities):
+        raise ValueError(
+            f"{model_name} received {len(y_true):,} observed outcomes "
+            f"but {len(bad_loan_probabilities):,} probabilities."
+        )
+
+    if y_true.nunique() != 2:
+        raise ValueError(
+            f"{dataset_name.capitalize()} target must contain both "
+            "class 0 and class 1 to calculate evaluation metrics."
+        )
+
+    metrics = {
+        "model_name": model_name,
+        "dataset_name": dataset_name,
+        "row_count": len(y_true),
+        "observed_bad_loan_rate": y_true.mean(),
+        "mean_predicted_bad_loan_probability": (
+            bad_loan_probabilities.mean()
+        ),
+        "roc_auc": roc_auc_score(
+            y_true,
+            bad_loan_probabilities,
+        ),
+        "average_precision": average_precision_score(
+            y_true,
+            bad_loan_probabilities,
+        ),
+        "log_loss": log_loss(
+            y_true,
+            bad_loan_probabilities,
+            labels=[0, 1],
+        ),
+        "brier_score": brier_score_loss(
+            y_true,
+            bad_loan_probabilities,
+        ),
+    }
+
+    log_step(
+        f"Calculated {dataset_name} probability metrics for "
+        f"{model_name}: ROC AUC={metrics['roc_auc']:.4f}, "
+        f"average precision={metrics['average_precision']:.4f}"
+    )
+
+    return metrics
