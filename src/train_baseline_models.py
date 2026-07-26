@@ -425,3 +425,106 @@ def calculate_probability_metrics(
     )
 
     return metrics
+
+
+
+def inspect_calibration_performance(
+    y_true: pd.Series,
+    bad_loan_probabilities: np.ndarray,
+    model_name: str,
+    dataset_name: str,
+    number_of_bins: int = 10,
+) -> pd.DataFrame:
+    """Summarize predicted and observed bad-loan rates by probability bin."""
+    log_step(
+        f"Inspecting {dataset_name} calibration for {model_name}"
+    )
+
+    if len(y_true) != len(bad_loan_probabilities):
+        raise ValueError(
+            f"{model_name} received {len(y_true):,} observed outcomes "
+            f"but {len(bad_loan_probabilities):,} probabilities."
+        )
+
+    if number_of_bins < 2:
+        raise ValueError(
+            "number_of_bins must be at least 2."
+        )
+
+    if not np.isfinite(bad_loan_probabilities).all():
+        raise ValueError(
+            f"{model_name} produced non-finite probabilities."
+        )
+
+    if (
+        (bad_loan_probabilities < 0).any()
+        or (bad_loan_probabilities > 1).any()
+    ):
+        raise ValueError(
+            f"{model_name} produced probabilities outside [0, 1]."
+        )
+
+    calibration_data = pd.DataFrame(
+        {
+            "actual_bad_loan": y_true.to_numpy(),
+            "predicted_bad_loan_probability": (
+                bad_loan_probabilities
+            ),
+        }
+    )
+
+    probability_bin_edges = np.linspace(
+        0,
+        1,
+        number_of_bins + 1,
+    )
+
+    calibration_data["probability_bin"] = pd.cut(
+        calibration_data["predicted_bad_loan_probability"],
+        bins=probability_bin_edges,
+        include_lowest=True,
+    )
+
+    calibration_summary = (
+        calibration_data.groupby(
+            "probability_bin",
+            observed=True,
+        )
+        .agg(
+            row_count=("actual_bad_loan", "size"),
+            mean_predicted_bad_loan_probability=(
+                "predicted_bad_loan_probability",
+                "mean",
+            ),
+            observed_bad_loan_rate=(
+                "actual_bad_loan",
+                "mean",
+            ),
+        )
+        .reset_index()
+    )
+
+    calibration_summary["calibration_gap"] = (
+        calibration_summary["observed_bad_loan_rate"]
+        - calibration_summary[
+            "mean_predicted_bad_loan_probability"
+        ]
+    )
+
+    calibration_summary.insert(
+        0,
+        "dataset_name",
+        dataset_name,
+    )
+    calibration_summary.insert(
+        0,
+        "model_name",
+        model_name,
+    )
+
+    log_step(
+        f"Created {len(calibration_summary):,} calibration bins "
+        f"for {model_name} on {dataset_name}"
+    )
+
+    return calibration_summary
