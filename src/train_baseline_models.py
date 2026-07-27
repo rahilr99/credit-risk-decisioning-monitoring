@@ -528,3 +528,131 @@ def inspect_calibration_performance(
     )
 
     return calibration_summary
+
+def calculate_threshold_metrics(
+    y_true: pd.Series,
+    bad_loan_probabilities: np.ndarray,
+    model_name: str,
+    dataset_name: str,
+    thresholds: tuple[float, ...] = (
+        0.10,
+        0.20,
+        0.30,
+        0.40,
+        0.50,
+        0.60,
+        0.70,
+        0.80,
+        0.90,
+    ),
+) -> pd.DataFrame:
+    """Calculate classification metrics across probability thresholds."""
+    log_step(
+        f"Calculating {dataset_name} threshold metrics for "
+        f"{model_name}"
+    )
+
+    if len(y_true) != len(bad_loan_probabilities):
+        raise ValueError(
+            f"{model_name} received {len(y_true):,} observed outcomes "
+            f"but {len(bad_loan_probabilities):,} probabilities."
+        )
+
+    if not np.isfinite(bad_loan_probabilities).all():
+        raise ValueError(
+            f"{model_name} produced non-finite probabilities."
+        )
+
+    if (
+        (bad_loan_probabilities < 0).any()
+        or (bad_loan_probabilities > 1).any()
+    ):
+        raise ValueError(
+            f"{model_name} produced probabilities outside [0, 1]."
+        )
+
+    threshold_values = np.asarray(
+        thresholds,
+        dtype=float,
+    )
+
+    if threshold_values.size == 0:
+        raise ValueError(
+            "At least one classification threshold is required."
+        )
+
+    if not np.isfinite(threshold_values).all():
+        raise ValueError(
+            "Classification thresholds must contain only finite values."
+        )
+
+    if (
+        (threshold_values < 0).any()
+        or (threshold_values > 1).any()
+    ):
+        raise ValueError(
+            "Classification thresholds must fall within [0, 1]."
+        )
+
+    threshold_rows = []
+
+    for threshold in threshold_values:
+        predicted_bad_loans = (
+            bad_loan_probabilities >= threshold
+        ).astype("int8")
+
+        (
+            true_negative,
+            false_positive,
+            false_negative,
+            true_positive,
+        ) = confusion_matrix(
+            y_true,
+            predicted_bad_loans,
+            labels=[0, 1],
+        ).ravel()
+
+        negative_count = true_negative + false_positive
+
+        false_positive_rate = (
+            false_positive / negative_count
+            if negative_count > 0
+            else 0.0
+        )
+
+        threshold_rows.append(
+            {
+                "model_name": model_name,
+                "dataset_name": dataset_name,
+                "threshold": threshold,
+                "row_count": len(y_true),
+                "observed_bad_loan_rate": y_true.mean(),
+                "predicted_bad_loan_rate": (
+                    predicted_bad_loans.mean()
+                ),
+                "true_negative": int(true_negative),
+                "false_positive": int(false_positive),
+                "false_negative": int(false_negative),
+                "true_positive": int(true_positive),
+                "precision": precision_score(
+                    y_true,
+                    predicted_bad_loans,
+                    zero_division=0,
+                ),
+                "recall": recall_score(
+                    y_true,
+                    predicted_bad_loans,
+                    zero_division=0,
+                ),
+                "false_positive_rate": false_positive_rate,
+            }
+        )
+
+    threshold_summary = pd.DataFrame(threshold_rows)
+
+    log_step(
+        f"Created {len(threshold_summary):,} threshold rows "
+        f"for {model_name} on {dataset_name}"
+    )
+
+    return threshold_summary
