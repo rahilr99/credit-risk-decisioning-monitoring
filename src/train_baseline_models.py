@@ -656,3 +656,130 @@ def calculate_threshold_metrics(
     )
 
     return threshold_summary
+
+
+def create_score_decile_summary(
+    y_true: pd.Series,
+    bad_loan_probabilities: np.ndarray,
+    model_name: str,
+    dataset_name: str,
+    number_of_deciles: int = 10,
+) -> pd.DataFrame:
+    """Summarize model performance across predicted-risk deciles."""
+    log_step(
+        f"Creating {dataset_name} score-decile summary for "
+        f"{model_name}"
+    )
+
+    if len(y_true) != len(bad_loan_probabilities):
+        raise ValueError(
+            f"{model_name} received {len(y_true):,} observed outcomes "
+            f"but {len(bad_loan_probabilities):,} probabilities."
+        )
+
+    if number_of_deciles < 2:
+        raise ValueError(
+            "number_of_deciles must be at least 2."
+        )
+
+    if len(y_true) < number_of_deciles:
+        raise ValueError(
+            f"Cannot create {number_of_deciles} score groups from only "
+            f"{len(y_true):,} rows."
+        )
+
+    if not np.isfinite(bad_loan_probabilities).all():
+        raise ValueError(
+            f"{model_name} produced non-finite probabilities."
+        )
+
+    if (
+        (bad_loan_probabilities < 0).any()
+        or (bad_loan_probabilities > 1).any()
+    ):
+        raise ValueError(
+            f"{model_name} produced probabilities outside [0, 1]."
+        )
+
+    score_data = pd.DataFrame(
+        {
+            "actual_bad_loan": y_true.to_numpy(),
+            "predicted_bad_loan_probability": (
+                bad_loan_probabilities
+            ),
+        }
+    )
+
+    score_data = score_data.sort_values(
+        "predicted_bad_loan_probability",
+        ascending=False,
+        kind="mergesort",
+    ).reset_index(drop=True)
+
+    score_data["score_decile"] = pd.qcut(
+        score_data.index,
+        q=number_of_deciles,
+        labels=range(1, number_of_deciles + 1),
+    )
+
+    decile_summary = (
+        score_data.groupby(
+            "score_decile",
+            observed=True,
+        )
+        .agg(
+            row_count=("actual_bad_loan", "size"),
+            bad_loan_count=("actual_bad_loan", "sum"),
+            minimum_predicted_bad_loan_probability=(
+                "predicted_bad_loan_probability",
+                "min",
+            ),
+            mean_predicted_bad_loan_probability=(
+                "predicted_bad_loan_probability",
+                "mean",
+            ),
+            maximum_predicted_bad_loan_probability=(
+                "predicted_bad_loan_probability",
+                "max",
+            ),
+            observed_bad_loan_rate=(
+                "actual_bad_loan",
+                "mean",
+            ),
+        )
+        .reset_index()
+    )
+
+    total_bad_loans = decile_summary["bad_loan_count"].sum()
+
+    if total_bad_loans == 0:
+        raise ValueError(
+            f"{dataset_name.capitalize()} target contains no bad loans."
+        )
+
+    decile_summary["share_of_all_bad_loans"] = (
+        decile_summary["bad_loan_count"]
+        / total_bad_loans
+    )
+
+    decile_summary["cumulative_bad_loan_share"] = (
+        decile_summary["share_of_all_bad_loans"].cumsum()
+    )
+
+    decile_summary.insert(
+        0,
+        "dataset_name",
+        dataset_name,
+    )
+    decile_summary.insert(
+        0,
+        "model_name",
+        model_name,
+    )
+
+    log_step(
+        f"Created {len(decile_summary):,} score groups for "
+        f"{model_name} on {dataset_name}"
+    )
+
+    return decile_summary
