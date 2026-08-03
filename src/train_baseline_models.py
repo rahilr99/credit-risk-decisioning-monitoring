@@ -58,6 +58,9 @@ VALIDATION_THRESHOLD_PATH = (
 VALIDATION_DECILE_PATH = (
     REPORTS_DIR / "validation_score_deciles.csv"
 )
+VALIDATION_CALIBRATION_PATH = (
+    REPORTS_DIR / "validation_calibration_summary.csv"
+)
 LOGISTIC_COEFFICIENT_PATH = (
     REPORTS_DIR / "logistic_regression_coefficients.csv"
 )
