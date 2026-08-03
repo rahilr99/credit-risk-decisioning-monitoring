@@ -857,3 +857,54 @@ def create_logistic_coefficient_report(
     )
 
     return coefficient_report
+
+
+def save_model_artifacts(
+    dummy_model: DummyClassifier,
+    logistic_model: LogisticRegression,
+) -> None:
+    """Save the fitted baseline models to disk."""
+    log_step("Saving fitted baseline model artifacts")
+
+    if not hasattr(dummy_model, "classes_"):
+        raise ValueError(
+            "The dummy baseline model has not been fitted."
+        )
+
+    if not hasattr(logistic_model, "coef_"):
+        raise ValueError(
+            "The logistic-regression baseline has not been fitted."
+        )
+
+    MODELS_DIR.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+
+    joblib.dump(
+        dummy_model,
+        DUMMY_MODEL_PATH,
+    )
+
+    joblib.dump(
+        logistic_model,
+        LOGISTIC_MODEL_PATH,
+    )
+
+    if not DUMMY_MODEL_PATH.exists():
+        raise FileNotFoundError(
+            f"Dummy baseline model was not saved: "
+            f"{DUMMY_MODEL_PATH}"
+        )
+
+    if not LOGISTIC_MODEL_PATH.exists():
+        raise FileNotFoundError(
+            f"Logistic-regression baseline was not saved: "
+            f"{LOGISTIC_MODEL_PATH}"
+        )
+
+    log_step(
+        "Saved baseline model artifacts: "
+        f"{DUMMY_MODEL_PATH.name} and "
+        f"{LOGISTIC_MODEL_PATH.name}"
+    )
