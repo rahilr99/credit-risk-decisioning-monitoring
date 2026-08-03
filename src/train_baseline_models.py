@@ -783,3 +783,77 @@ def create_score_decile_summary(
     )
 
     return decile_summary
+
+
+def create_logistic_coefficient_report(
+    logistic_model: LogisticRegression,
+    feature_names: list[str],
+) -> pd.DataFrame:
+    """Create a report linking logistic coefficients to feature names."""
+    log_step("Creating logistic-regression coefficient report")
+
+    if not hasattr(logistic_model, "coef_"):
+        raise ValueError(
+            "The logistic-regression model has not been fitted."
+        )
+
+    coefficients = np.asarray(
+        logistic_model.coef_,
+        dtype=float,
+    ).ravel()
+
+    if len(feature_names) != len(coefficients):
+        raise ValueError(
+            f"Received {len(feature_names):,} feature names but "
+            f"{len(coefficients):,} logistic coefficients."
+        )
+
+    if not np.isfinite(coefficients).all():
+        raise ValueError(
+            "Logistic-regression coefficients contain non-finite values."
+        )
+
+    coefficient_report = pd.DataFrame(
+        {
+            "feature_name": feature_names,
+            "coefficient": coefficients,
+        }
+    )
+
+    coefficient_report["absolute_coefficient"] = (
+        coefficient_report["coefficient"].abs()
+    )
+
+    coefficient_report["coefficient_direction"] = np.select(
+        [
+            coefficient_report["coefficient"] > 0,
+            coefficient_report["coefficient"] < 0,
+        ],
+        [
+            "increases_bad_loan_risk",
+            "decreases_bad_loan_risk",
+        ],
+        default="neutral",
+    )
+
+    coefficient_report = coefficient_report.sort_values(
+        [
+            "absolute_coefficient",
+            "feature_name",
+        ],
+        ascending=[False, True],
+        kind="mergesort",
+    ).reset_index(drop=True)
+
+    coefficient_report.insert(
+        0,
+        "coefficient_rank",
+        np.arange(1, len(coefficient_report) + 1),
+    )
+
+    log_step(
+        f"Created coefficient report for "
+        f"{len(coefficient_report):,} features"
+    )
+
+    return coefficient_report
