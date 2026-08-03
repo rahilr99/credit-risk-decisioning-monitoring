@@ -908,3 +908,37 @@ def save_model_artifacts(
         f"{DUMMY_MODEL_PATH.name} and "
         f"{LOGISTIC_MODEL_PATH.name}"
     )
+
+def save_report_table(
+    report: pd.DataFrame,
+    output_path: Path,
+    report_name: str,
+) -> None:
+    """Save a non-empty report table to a CSV file."""
+    log_step(f"Saving {report_name}")
+
+    if report.empty:
+        raise ValueError(
+            f"{report_name.capitalize()} contains no rows."
+        )
+
+    output_path.parent.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+
+    report.to_csv(
+        output_path,
+        index=False,
+    )
+
+    if not output_path.exists():
+        raise FileNotFoundError(
+            f"{report_name.capitalize()} was not saved: "
+            f"{output_path}"
+        )
+
+    log_step(
+        f"Saved {report_name} with {len(report):,} rows: "
+        f"{output_path.name}"
+    )
