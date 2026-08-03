@@ -945,3 +945,188 @@ def save_report_table(
         f"Saved {report_name} with {len(report):,} rows: "
         f"{output_path.name}"
     )
+
+def main() -> None:
+    """Run the baseline-model training and validation workflow."""
+    log_step("Starting baseline-model training workflow")
+
+    X_train = load_sparse_features(
+        TRAIN_FEATURES_PATH,
+        "training",
+    )
+
+    y_train = load_target(
+        TRAIN_TARGET_PATH,
+        "training",
+    )
+
+    X_validation = load_sparse_features(
+        VALIDATION_FEATURES_PATH,
+        "validation",
+    )
+
+    y_validation = load_target(
+        VALIDATION_TARGET_PATH,
+        "validation",
+    )
+
+    feature_names = load_feature_names(
+        FEATURE_NAMES_PATH,
+    )
+
+    validate_dataset_alignment(
+        X_train,
+        y_train,
+        X_validation,
+        y_validation,
+        feature_names,
+    )
+
+    dummy_model = train_dummy_baseline(
+        X_train,
+        y_train,
+    )
+
+    logistic_model = train_logistic_baseline(
+        X_train,
+        y_train,
+    )
+
+    dummy_validation_probabilities = (
+        generate_bad_loan_probabilities(
+            dummy_model,
+            X_validation,
+            "dummy_prior_baseline",
+            "validation",
+        )
+    )
+
+    logistic_validation_probabilities = (
+        generate_bad_loan_probabilities(
+            logistic_model,
+            X_validation,
+            "logistic_regression_baseline",
+            "validation",
+        )
+    )
+
+    validation_performance_report = pd.DataFrame(
+        [
+            calculate_probability_metrics(
+                y_validation,
+                dummy_validation_probabilities,
+                "dummy_prior_baseline",
+                "validation",
+            ),
+            calculate_probability_metrics(
+                y_validation,
+                logistic_validation_probabilities,
+                "logistic_regression_baseline",
+                "validation",
+            ),
+        ]
+    )
+
+    validation_calibration_report = pd.concat(
+        [
+            inspect_calibration_performance(
+                y_validation,
+                dummy_validation_probabilities,
+                "dummy_prior_baseline",
+                "validation",
+            ),
+            inspect_calibration_performance(
+                y_validation,
+                logistic_validation_probabilities,
+                "logistic_regression_baseline",
+                "validation",
+            ),
+        ],
+        ignore_index=True,
+    )
+
+    validation_threshold_report = pd.concat(
+        [
+            calculate_threshold_metrics(
+                y_validation,
+                dummy_validation_probabilities,
+                "dummy_prior_baseline",
+                "validation",
+            ),
+            calculate_threshold_metrics(
+                y_validation,
+                logistic_validation_probabilities,
+                "logistic_regression_baseline",
+                "validation",
+            ),
+        ],
+        ignore_index=True,
+    )
+
+    validation_decile_report = pd.concat(
+        [
+            create_score_decile_summary(
+                y_validation,
+                dummy_validation_probabilities,
+                "dummy_prior_baseline",
+                "validation",
+            ),
+            create_score_decile_summary(
+                y_validation,
+                logistic_validation_probabilities,
+                "logistic_regression_baseline",
+                "validation",
+            ),
+        ],
+        ignore_index=True,
+    )
+
+    logistic_coefficient_report = (
+        create_logistic_coefficient_report(
+            logistic_model,
+            feature_names.tolist(),
+        )
+    )
+
+    save_model_artifacts(
+        dummy_model,
+        logistic_model,
+    )
+
+    save_report_table(
+        validation_performance_report,
+        VALIDATION_PERFORMANCE_PATH,
+        "validation model performance report",
+    )
+
+    save_report_table(
+        validation_calibration_report,
+        VALIDATION_CALIBRATION_PATH,
+        "validation calibration report",
+    )
+
+    save_report_table(
+        validation_threshold_report,
+        VALIDATION_THRESHOLD_PATH,
+        "validation threshold report",
+    )
+
+    save_report_table(
+        validation_decile_report,
+        VALIDATION_DECILE_PATH,
+        "validation score-decile report",
+    )
+
+    save_report_table(
+        logistic_coefficient_report,
+        LOGISTIC_COEFFICIENT_PATH,
+        "logistic-regression coefficient report",
+    )
+
+    log_step(
+        "Baseline-model training workflow completed successfully"
+    )
+
+
+if __name__ == "__main__":
+    main()
