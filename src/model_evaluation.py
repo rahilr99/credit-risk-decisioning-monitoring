@@ -434,3 +434,53 @@ def create_score_decile_summary(
     )
 
     return decile_summary
+
+def evaluate_probability_predictions(
+    y_true: pd.Series,
+    bad_loan_probabilities: np.ndarray,
+    model_name: str,
+    dataset_name: str,
+) -> dict[
+    str,
+    dict[str, str | int | float] | pd.DataFrame,
+]:
+    """Run all standard evaluation reports for one set of probabilities."""
+    log_step(
+        f"Running complete {dataset_name} evaluation for "
+        f"{model_name}"
+    )
+
+    evaluation_results = {
+        "probability_metrics": calculate_probability_metrics(
+            y_true=y_true,
+            bad_loan_probabilities=bad_loan_probabilities,
+            model_name=model_name,
+            dataset_name=dataset_name,
+        ),
+        "calibration_summary": inspect_calibration_performance(
+            y_true=y_true,
+            bad_loan_probabilities=bad_loan_probabilities,
+            model_name=model_name,
+            dataset_name=dataset_name,
+        ),
+        "threshold_summary": calculate_threshold_metrics(
+            y_true=y_true,
+            bad_loan_probabilities=bad_loan_probabilities,
+            model_name=model_name,
+            dataset_name=dataset_name,
+        ),
+        "decile_summary": create_score_decile_summary(
+            y_true=y_true,
+            bad_loan_probabilities=bad_loan_probabilities,
+            model_name=model_name,
+            dataset_name=dataset_name,
+        ),
+    }
+
+    log_step(
+        f"Completed all {dataset_name} evaluation reports for "
+        f"{model_name}"
+    )
+
+    return evaluation_results
+
