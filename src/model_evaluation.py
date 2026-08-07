@@ -483,4 +483,3 @@ def evaluate_probability_predictions(
     )
 
     return evaluation_results
-
