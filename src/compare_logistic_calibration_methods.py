@@ -348,3 +348,114 @@ def apply_intercept_adjustment(
         )
 
     return calibrated_probabilities
+
+def fit_platt_calibrator(
+    calibration_log_odds: np.ndarray, 
+    y_calibration_fit: pd.Series, 
+) -> LogisticRegression:
+    """Fit Platt Calibration using the original logistic log-odds."""
+    calibration_log_odds = np.asarray(
+        calibration_log_odds, 
+        dtype=float,
+    ).ravel()
+
+    calibration_targets = np.asarray(
+        y_calibration_fit, 
+        dtype=int,
+    ).ravel()
+
+    if len(calibration_log_odds) != len(calibration_targets):
+        raise ValueError(
+            "Calibration log-odds and target row counts do not match: "
+            f"{len(calibration_log_odds):,} scores versus "
+            f"{len(calibration_targets):,} targets."
+        )
+    
+    if not np.isfinite(calibration_log_odds).all(): 
+        raise ValueError(
+            "Calibration log-odds contain non-finite values."
+        )
+    
+    if set(np.unique(calibration_targets).tolist()) != {0, 1}: 
+        raise ValueError(
+            "Calibration targets must contain both class 0 and class 1."
+        )
+    
+    platt_calibrator = LogisticRegression(
+        penalty=None, 
+        solver="lbfgs",
+        max_iter=1000, 
+    )
+
+    platt_calibrator.fit(
+        calibration_log_odds.reshape(-1,1),
+        calibration_targets,
+    )
+
+    platt_scale = float(platt_calibrator.coef_[0, 0])
+    platt_intercept = float(platt_calibrator.intercept_[0])
+
+    if not np.isfinite(platt_scale):
+        raise ValueError(
+            "Platt calibration produced a non-finite scale."
+        )
+    
+    if not np.isfinite(platt_intercept):
+        raise ValueError(
+            "Platt calibration produced a non-finite intercept."
+        )
+    
+    return platt_calibrator
+
+
+def apply_platt_calibration(
+    platt_calibrator: LogisticRegression,
+    log_odds: np.ndarray,
+    dataset_name: str,
+) -> np.ndarray:
+    """Apply a fitted Platt calibrator to logistic log-odds."""
+    log_odds = np.asarray(
+        log_odds,
+        dtype=float,
+    ).ravel()
+
+    if not np.isfinite(log_odds).all():
+        raise ValueError(
+            f"{dataset_name.capitalize()} log-odds contain "
+            "non-finite values."
+        )
+
+    if not hasattr(platt_calibrator, "classes_"):
+        raise ValueError(
+            "Platt calibrator has not been fitted."
+        )
+
+    if 1 not in platt_calibrator.classes_:
+        raise ValueError(
+            "Platt calibrator does not contain bad-loan class 1."
+        )
+
+    class_one_index = int(
+        np.where(platt_calibrator.classes_ == 1)[0][0]
+    )
+
+    calibrated_probabilities = platt_calibrator.predict_proba(
+        log_odds.reshape(-1, 1)
+    )[:, class_one_index]
+
+    if not np.isfinite(calibrated_probabilities).all():
+        raise ValueError(
+            f"{dataset_name.capitalize()} Platt-calibrated "
+            "probabilities contain non-finite values."
+        )
+
+    if (
+        (calibrated_probabilities < 0.0).any()
+        or (calibrated_probabilities > 1.0).any()
+    ):
+        raise ValueError(
+            f"{dataset_name.capitalize()} Platt-calibrated "
+            "probabilities fall outside the range [0, 1]."
+        )
+
+    return calibrated_probabilities
