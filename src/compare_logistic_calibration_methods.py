@@ -459,3 +459,87 @@ def apply_platt_calibration(
         )
 
     return calibrated_probabilities
+
+
+def fit_isotonic_calibrator(
+    calibration_log_odds: np.ndarray,
+    y_calibration_fit: pd.Series,
+) -> IsotonicRegression:
+    """Fit isotonic calibration using the original logistic log-odds."""
+    calibration_log_odds = np.asarray(
+        calibration_log_odds,
+        dtype=float,
+    ).ravel()
+
+    calibration_targets = np.asarray(
+        y_calibration_fit,
+        dtype=int,
+    ).ravel()
+
+    if len(calibration_log_odds) != len(calibration_targets):
+        raise ValueError(
+            "Calibration log-odds and target row counts do not match: "
+            f"{len(calibration_log_odds):,} scores versus "
+            f"{len(calibration_targets):,} targets."
+        )
+
+    if not np.isfinite(calibration_log_odds).all():
+        raise ValueError(
+            "Calibration log-odds contain non-finite values."
+        )
+
+    if set(np.unique(calibration_targets).tolist()) != {0, 1}:
+        raise ValueError(
+            "Calibration targets must contain both class 0 and class 1."
+        )
+
+    isotonic_calibrator = IsotonicRegression(
+        y_min=0.0,
+        y_max=1.0,
+        out_of_bounds="clip",
+    )
+
+    isotonic_calibrator.fit(
+        calibration_log_odds,
+        calibration_targets,
+    )
+
+    return isotonic_calibrator
+
+def apply_isotonic_calibration(
+    isotonic_calibrator: IsotonicRegression,
+    log_odds: np.ndarray,
+    dataset_name: str,
+) -> np.ndarray:
+    """Apply a fitted isotonic calibrator to logistic log-odds."""
+    log_odds = np.asarray(
+        log_odds,
+        dtype=float,
+    ).ravel()
+
+    if not np.isfinite(log_odds).all():
+        raise ValueError(
+            f"{dataset_name.capitalize()} log-odds contain "
+            "non-finite values."
+        )
+
+    calibrated_probabilities = isotonic_calibrator.predict(
+        log_odds
+    )
+
+    if not np.isfinite(calibrated_probabilities).all():
+        raise ValueError(
+            f"{dataset_name.capitalize()} isotonic-calibrated "
+            "probabilities contain non-finite values."
+        )
+
+    if (
+        (calibrated_probabilities < 0.0).any()
+        or (calibrated_probabilities > 1.0).any()
+    ):
+        raise ValueError(
+            f"{dataset_name.capitalize()} isotonic-calibrated "
+            "probabilities fall outside the range [0, 1]."
+        )
+
+    return calibrated_probabilities
