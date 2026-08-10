@@ -766,3 +766,40 @@ def evaluate_calibration_candidates(
         discrimination_summary_report,
         discrimination_decile_report,
     )
+
+def save_calibration_comparison_reports(
+    calibration_summary_report: pd.DataFrame,
+    calibration_band_report: pd.DataFrame,
+    discrimination_summary_report: pd.DataFrame,
+    discrimination_decile_report: pd.DataFrame,
+    reports_directory: Path,
+) -> None:
+    """Save calibration comparison reports as CSV files."""
+    reports_directory.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+
+    calibration_summary_report.to_csv(
+        reports_directory
+        / "logistic_calibration_summary.csv",
+        index=False,
+    )
+
+    calibration_band_report.to_csv(
+        reports_directory
+        / "logistic_calibration_band_comparison.csv",
+        index=False,
+    )
+
+    discrimination_summary_report.to_csv(
+        reports_directory
+        / "logistic_calibration_discrimination_summary.csv",
+        index=False,
+    )
+
+    discrimination_decile_report.to_csv(
+        reports_directory
+        / "logistic_calibration_discrimination_deciles.csv",
+        index=False,
+    )
