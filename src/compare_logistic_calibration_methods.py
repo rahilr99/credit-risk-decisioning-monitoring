@@ -6,11 +6,15 @@ import pandas as pd
 from scipy import sparse
 from scipy.optimize import minimize_scalar
 from scipy.special import expit
+from scipy.stats import spearmanr
 from sklearn.isotonic import IsotonicRegression
 from sklearn.linear_model import LogisticRegression
 
 from model_evaluation import (
     evaluate_probability_predictions,
+    create_score_decile_summary, 
+    calculate_probability_metrics, 
+    inspect_calibration_performance,
     log_step,
 )
 from train_baseline_models import (
@@ -543,3 +547,222 @@ def apply_isotonic_calibration(
         )
 
     return calibrated_probabilities
+
+
+def evaluate_calibration_candidates(
+    y_comparison: pd.Series,
+    candidate_probabilities: dict[str, np.ndarray],
+    reference_method_name: str = "uncalibrated",
+) -> tuple[
+    pd.DataFrame,
+    pd.DataFrame,
+    pd.DataFrame,
+    pd.DataFrame,
+]:
+    """Create calibration and discrimination comparison reports."""
+    dataset_name = "validation_calibration_comparison"
+
+    method_order = list(candidate_probabilities.keys())
+
+    reference_probabilities = np.asarray(
+        candidate_probabilities[reference_method_name],
+        dtype=float,
+    ).ravel()
+
+    calibration_summary_rows = []
+    calibration_band_reports = []
+
+    discrimination_summary_rows = []
+    discrimination_decile_reports = []
+
+    for method_name, probabilities in candidate_probabilities.items():
+        probabilities = np.asarray(
+            probabilities,
+            dtype=float,
+        ).ravel()
+
+        probability_metrics = calculate_probability_metrics(
+            y_true=y_comparison,
+            bad_loan_probabilities=probabilities,
+            model_name=method_name,
+            dataset_name=dataset_name,
+        )
+
+        calibration_report = inspect_calibration_performance(
+            y_true=y_comparison,
+            bad_loan_probabilities=probabilities,
+            model_name=method_name,
+            dataset_name=dataset_name,
+        )
+
+        calibration_report["absolute_calibration_gap"] = (
+            calibration_report["calibration_gap"].abs()
+        )
+
+        weighted_mean_absolute_calibration_gap = float(
+            np.average(
+                calibration_report["absolute_calibration_gap"],
+                weights=calibration_report["row_count"],
+            )
+        )
+
+        calibration_summary_rows.append(
+            {
+                "calibration_method": method_name,
+                "observed_bad_loan_rate": (
+                    probability_metrics["observed_bad_loan_rate"]
+                ),
+                "mean_predicted_bad_loan_probability": (
+                    probability_metrics[
+                        "mean_predicted_bad_loan_probability"
+                    ]
+                ),
+                "weighted_mean_absolute_calibration_gap": (
+                    weighted_mean_absolute_calibration_gap
+                ),
+                "log_loss": probability_metrics["log_loss"],
+                "brier_score": probability_metrics["brier_score"],
+            }
+        )
+
+        calibration_report = calibration_report[
+            [
+                "probability_bin",
+                "row_count",
+                "mean_predicted_bad_loan_probability",
+                "observed_bad_loan_rate",
+                "calibration_gap",
+                "absolute_calibration_gap",
+            ]
+        ].copy()
+
+        calibration_report.insert(
+            0,
+            "calibration_method",
+            method_name,
+        )
+
+        calibration_band_reports.append(
+            calibration_report
+        )
+
+        rank_correlation = float(
+            spearmanr(
+                reference_probabilities,
+                probabilities,
+            ).statistic
+        )
+
+        gini = (
+            2.0 * probability_metrics["roc_auc"]
+            - 1.0
+        )
+
+        discrimination_summary_rows.append(
+            {
+                "calibration_method": method_name,
+                "roc_auc": probability_metrics["roc_auc"],
+                "gini": gini,
+                "average_precision": (
+                    probability_metrics["average_precision"]
+                ),
+                "spearman_rank_correlation_to_uncalibrated": (
+                    rank_correlation
+                ),
+            }
+        )
+
+        decile_report = create_score_decile_summary(
+            y_true=y_comparison,
+            bad_loan_probabilities=probabilities,
+            model_name=method_name,
+            dataset_name=dataset_name,
+        )
+
+        decile_report = decile_report[
+            [
+                "score_decile",
+                "row_count",
+                "mean_predicted_bad_loan_probability",
+                "observed_bad_loan_rate",
+                "share_of_all_bad_loans",
+                "cumulative_bad_loan_share",
+            ]
+        ].copy()
+
+        decile_report.insert(
+            0,
+            "calibration_method",
+            method_name,
+        )
+
+        discrimination_decile_reports.append(
+            decile_report
+        )
+
+    calibration_summary_report = pd.DataFrame(
+        calibration_summary_rows
+    )
+
+    calibration_band_report = pd.concat(
+        calibration_band_reports,
+        ignore_index=True,
+    )
+
+    discrimination_summary_report = pd.DataFrame(
+        discrimination_summary_rows
+    )
+
+    discrimination_decile_report = pd.concat(
+        discrimination_decile_reports,
+        ignore_index=True,
+    )
+
+    calibration_band_report["calibration_method"] = pd.Categorical(
+        calibration_band_report["calibration_method"],
+        categories=method_order,
+        ordered=True,
+    )
+
+    calibration_band_report = calibration_band_report.sort_values(
+        [
+            "probability_bin",
+            "calibration_method",
+        ]
+    ).reset_index(drop=True)
+
+    discrimination_decile_report[
+        "calibration_method"
+    ] = pd.Categorical(
+        discrimination_decile_report["calibration_method"],
+        categories=method_order,
+        ordered=True,
+    )
+
+    discrimination_decile_report = (
+        discrimination_decile_report.sort_values(
+            [
+                "score_decile",
+                "calibration_method",
+            ]
+        ).reset_index(drop=True)
+    )
+
+    calibration_band_report[
+        "calibration_method"
+    ] = calibration_band_report[
+        "calibration_method"
+    ].astype(str)
+
+    discrimination_decile_report[
+        "calibration_method"
+    ] = discrimination_decile_report[
+        "calibration_method"
+    ].astype(str)
+
+    return (
+        calibration_summary_report,
+        calibration_band_report,
+        discrimination_summary_report,
+        discrimination_decile_report,
+    )
