@@ -46,7 +46,7 @@ RANDOM_STATE = 42
 
 
 def load_logistic_baseline_model(
-        file_path: Path, 
+        file_path: Path=LOGISTIC_BASELINE_MODEL_PATH, 
 ) -> LogisticRegression:
     """Validate and load the fitted logistic-regression baseline."""
     log_step("Loading logistic-regression baseline model")
@@ -92,7 +92,7 @@ def load_logistic_baseline_model(
 def create_chronological_calibration_split(
     X_validation: sparse.csr_matrix,
     y_validation: pd.Series,
-    calibration_fit_fraction: float,
+    calibration_fit_fraction: float = CALIBRATION_FIT_FRACTION,
 ) -> tuple[
     sparse.csr_matrix,
     pd.Series,
@@ -803,3 +803,109 @@ def save_calibration_comparison_reports(
         / "logistic_calibration_discrimination_deciles.csv",
         index=False,
     )
+
+def main() -> None:
+    """Run the logistic-regression calibration comparison workflow."""
+    log_step("Starting logistic calibration comparison workflow")
+
+    X_validation = load_sparse_features(
+        VALIDATION_FEATURES_PATH,
+        "validation",
+    )
+
+    y_validation = load_target(
+        VALIDATION_TARGET_PATH,
+        "validation",
+    )
+
+    (
+        X_calibration_fit,
+        y_calibration_fit,
+        X_comparison,
+        y_comparison,
+    ) = create_chronological_calibration_split(
+        X_validation,
+        y_validation,
+    )
+
+    logistic_model = load_logistic_baseline_model()
+
+    calibration_fit_log_odds, _ = generate_logistic_scores(
+        logistic_model,
+        X_calibration_fit,
+        "calibration fit",
+    )
+
+    (
+        comparison_log_odds,
+        uncalibrated_comparison_probabilities,
+    ) = generate_logistic_scores(
+        logistic_model,
+        X_comparison,
+        "calibration comparison",
+    )
+
+    intercept_shift = fit_intercept_adjustment(
+        calibration_fit_log_odds,
+        y_calibration_fit,
+    )
+
+    platt_calibrator = fit_platt_calibrator(
+        calibration_fit_log_odds,
+        y_calibration_fit,
+    )
+
+    isotonic_calibrator = fit_isotonic_calibrator(
+        calibration_fit_log_odds,
+        y_calibration_fit,
+    )
+
+    intercept_probabilities = apply_intercept_adjustment(
+        comparison_log_odds,
+        intercept_shift,
+        "calibration comparison",
+    )
+
+    platt_probabilities = apply_platt_calibration(
+        platt_calibrator,
+        comparison_log_odds,
+        "calibration comparison",
+    )
+
+    isotonic_probabilities = apply_isotonic_calibration(
+        isotonic_calibrator,
+        comparison_log_odds,
+        "calibration comparison",
+    )
+
+    candidate_probabilities = {
+        "uncalibrated": uncalibrated_comparison_probabilities,
+        "intercept": intercept_probabilities,
+        "platt": platt_probabilities,
+        "isotonic": isotonic_probabilities,
+    }
+
+    (
+        calibration_summary_report,
+        calibration_band_report,
+        discrimination_summary_report,
+        discrimination_decile_report,
+    ) = evaluate_calibration_candidates(
+        y_comparison,
+        candidate_probabilities,
+    )
+
+    save_calibration_comparison_reports(
+        calibration_summary_report,
+        calibration_band_report,
+        discrimination_summary_report,
+        discrimination_decile_report,
+        REPORTS_DIR,
+    )
+
+    log_step(
+        "Logistic calibration comparison workflow completed successfully"
+    )
+
+if __name__ == "__main__":
+    main()
