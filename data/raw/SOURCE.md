@@ -10,5 +10,4 @@ This project uses the accepted/booked LendingClub loan file because the target v
 
 The rejected-loan file is excluded from the main MVP because rejected applications do not have observed repayment outcomes. Including rejected applications would change the project into an acceptance/rejection classification problem, which is outside the scope of this MVP.
 
-Raw data rule:
-The file in `data/raw/` should not be manually edited. All transformations should happen through code and should produce outputs in `data/interim/` or later `data/processed/`.
+
